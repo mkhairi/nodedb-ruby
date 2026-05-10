@@ -143,7 +143,7 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 ## Known issues
 
 These are NodeDB-side parser quirks that the SQL builders intentionally work
-around. They are documented in `../bugs/` and may be fixed upstream over time.
+around. They are documented in `docs/bugs/` and may be fixed upstream over time.
 
 - **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits bare
   `column` / `table` names; quoting via `"col"` returns no rows.
@@ -154,7 +154,7 @@ around. They are documented in `../bugs/` and may be fixed upstream over time.
   than relying on `IF EXISTS`.
 - **Document INSERTs require `document_strict` engine for typed columns** —
   schemaless collections silently drop fields that aren't `id`. (Resolved as
-  of BUG-001 fix in NodeDB source; see `../bugs/001-*.md`.)
+  of BUG-001 fix in NodeDB source; see `docs/bugs/001-*.md`.)
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements, so callers must use simple-query
   mode.
