@@ -39,14 +39,25 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 
 ## Installation
 
+The gem isn't on rubygems yet — it's alpha (`0.1.0.alpha.N`). Pull from
+GitHub via Bundler's `github:` shorthand:
+
 ```ruby
-gem "nodedb-ruby"
+gem "nodedb-ruby", github: "mkhairi/nodedb-ruby", branch: "main"
 ```
 
-Or from source while the gem is unreleased:
+For SSH-only setups: `bundle config github.https false` (one-time).
+
+For monorepo development against a local checkout:
 
 ```ruby
 gem "nodedb-ruby", path: "../nodedb-ruby"
+```
+
+Once the gem ships to rubygems, the standard form will work:
+
+```ruby
+gem "nodedb-ruby"
 ```
 
 ## Usage
