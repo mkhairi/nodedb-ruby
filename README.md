@@ -108,6 +108,12 @@ NodeDB::SQL::Collection.create("articles", engine: :document_strict, columns: [
 ])
 # CREATE COLLECTION articles (id TEXT PRIMARY KEY, title TEXT, body TEXT)
 # WITH (engine='document_strict')
+
+# engine_options: arbitrary key/value pairs serialised into the WITH clause
+NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
+  engine_options: { retention: "7d", compression: "zstd" })
+# CREATE COLLECTION metrics (ts TIMESTAMP TIME_KEY, value FLOAT)
+# WITH (engine='timeseries', retention='7d', compression='zstd')
 ```
 
 ### Type map
@@ -123,7 +129,7 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 - [x] PG-based connection wrapper
 - [x] Type map for NodeDB-specific types (vector, geometry, json, uuid)
 - [x] SQL builders
-  - [x] `Collection.create` / `drop` / `show` / `drop_if_exists`
+  - [x] `Collection.create` (with `engine_options:` for WITH-clause settings) / `drop` / `show` / `drop_if_exists`
   - [x] `Vector.search` (`SEARCH … USING VECTOR(col, ARRAY[…], limit)`)
   - [x] `Graph.insert_edge` / `traverse` / `algo` / `delete_edge` (with required `IN 'collection'` clause)
   - [x] `Timeseries.create` / `time_bucket` / range helpers
