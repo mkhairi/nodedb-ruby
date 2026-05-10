@@ -28,7 +28,7 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working (pg gem, simple-query mode) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL |
-| Bundled NodeDB version | 0.1.x (built from `../nodedb`) |
+| Bundled NodeDB version | 0.1.x (built from `../../nodedb`) |
 | Test suite       | covered indirectly via `activerecord-nodedb-adapter` (13/0/0) |
 
 ## Requirements
