@@ -21,6 +21,15 @@ PostgreSQL-wire-compatible binary on port 6432.
 This gem is the **core** that `activerecord-nodedb-adapter` and
 `sequel-nodedb-adapter` build on. Use it directly when you don't want a full ORM.
 
+## Companion packages
+
+| Repo | Role |
+| ---- | ---- |
+| [`mkhairi/nodedb-ruby`](https://github.com/mkhairi/nodedb-ruby) | **this gem** — framework-agnostic core |
+| [`mkhairi/activerecord-nodedb-adapter`](https://github.com/mkhairi/activerecord-nodedb-adapter) | Rails ActiveRecord adapter built on this gem |
+| [`mkhairi/sequel-nodedb-adapter`](https://github.com/mkhairi/sequel-nodedb-adapter) | Sequel adapter (stub) |
+| [`mkhairi/nodedb-on-rails`](https://github.com/mkhairi/nodedb-on-rails) | Rails 8 sample app exercising every NodeDB engine |
+
 ## Status
 
 | Component        | State |
