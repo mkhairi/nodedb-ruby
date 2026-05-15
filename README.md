@@ -37,14 +37,15 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working (pg gem, simple-query mode) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL |
-| Bundled NodeDB version | 0.1.x (built from `../../nodedb`) |
+| NodeDB versions  | 0.1.x, 0.2.0, **0.2.1** (latest retest 2026-05-15 — see *Known issues*) |
 | Test suite       | covered indirectly via `activerecord-nodedb-adapter` (13/0/0) |
 
 ## Requirements
 
 - Ruby 3.2+ (tested on 4.0.1)
 - `pg` gem (libpq client)
-- A running NodeDB instance on `pgwire` (default `localhost:6432`)
+- A running NodeDB instance on `pgwire` (default `localhost:6432`) —
+  **v0.2.1 recommended** (resolves BUG-004 parser quirk upstream)
 
 ## Installation
 
@@ -168,19 +169,27 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 ## Known issues
 
-These are NodeDB-side parser quirks that the SQL builders intentionally work
-around. They are documented in `docs/bugs/` and may be fixed upstream over time.
+NodeDB-side parser quirks that the SQL builders intentionally work around.
+Documented in `docs/bugs/`. For the full cross-gem bug log, see the
+[AR adapter bug index][ar-bugs]. Last retested: **2026-05-15** against
+**NodeDB v0.2.1**.
 
+[ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/bugs/README.md
+
+### Resolved upstream
+- **BUG-001** `ResourcesExhausted` on non-timeseries INSERT — fixed in NodeDB
+  source. Document / KV / graph / etc. writes work on v0.1.0+.
+- **BUG-004** `DROP COLLECTION IF EXISTS` parser quirk — fixed in v0.2.1.
+  `Collection.drop_if_exists` workaround kept for compat with older binaries.
+
+### Still in play
 - **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits bare
   `column` / `table` names; quoting via `"col"` returns no rows.
 - **Qualified column refs return nil** — `articles.id` and `"articles"."id"`
   resolve to nil. ActiveRecord callers must select unqualified columns.
-- **`CREATE COLLECTION IF EXISTS` half-broken (BUG-004)** — partial fix
-  upstream; `Collection.drop_if_exists` rescues the not-found error rather
-  than relying on `IF EXISTS`.
-- **Document INSERTs require `document_strict` engine for typed columns** —
-  schemaless collections silently drop fields that aren't `id`. (Resolved as
-  of BUG-001 fix in NodeDB source; see `docs/bugs/001-*.md`.)
+- **Schemaless `SELECT *` returns wrapped JSON** — schemaless document
+  collections return a single `{"result" => "<json>"}` column. Either project
+  explicit columns or use the `document_strict` engine.
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements, so callers must use simple-query
   mode.
