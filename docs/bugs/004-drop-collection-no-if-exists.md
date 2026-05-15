@@ -1,6 +1,17 @@
 # BUG-004: DROP COLLECTION IF EXISTS broken when collection exists
 
-## Status: OPEN (retested 2026-05-10)
+## Status: RESOLVED upstream — NodeDB v0.2.1 (retested 2026-05-15)
+
+Fixed in NodeDB v0.2.1. `DROP COLLECTION IF EXISTS <name>` now matches
+PostgreSQL's `DROP TABLE IF EXISTS` semantics in both branches (collection
+exists / does not exist). `NodeDB::SQL::Collection.drop_if_exists` and the
+AR adapter's `drop_collection(if_exists:)` rescue are now redundant on
+v0.2.1+ but kept for compatibility with older binaries until the gems drop
+support for NodeDB < 0.2.1.
+
+GitHub issue: mkhairi/nodedb-ruby#1 — closed 2026-05-15.
+
+### Earlier history (OPEN, 2026-05-10)
 
 Still reproduces. When the collection exists,
 `DROP COLLECTION IF EXISTS name` fails with `ERROR: collection 'if' does not exist`.
