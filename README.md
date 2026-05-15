@@ -164,7 +164,7 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 - [ ] Async / fiber-based adapter for `async-pg`
 - [ ] Schema introspection helpers (DESCRIBE wrapper that yields typed columns)
 - [ ] First-class `RETURNING` parsing for `INSERT … RETURNING id`
-- [ ] CHANGELOG.md
+- [x] CHANGELOG.md
 - [ ] RSpec coverage for builders in isolation (currently exercised only through ActiveRecord adapter)
 
 ## Known issues
