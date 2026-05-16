@@ -34,17 +34,19 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 
 | Component        | State |
 | ---------------- | ----- |
-| Connection       | Working (pg gem, simple-query mode) |
+| Connection       | Working — `:pg` (pg gem, simple-query mode, 6432) and `:native` (MessagePack binary protocol, 6433, no libpq) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
-| SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL |
+| SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL — transport-agnostic (work over `:pg` and `:native`) |
 | NodeDB versions  | 0.1.x, 0.2.0, **0.2.1** (latest retest 2026-05-15 — see *Known issues*) |
-| Test suite       | covered indirectly via `activerecord-nodedb-adapter` (13/0/0) |
+| Test suite       | own suite: 39/0/0 (unit + live-NodeDB integration); also covered via `activerecord-nodedb-adapter` |
 
 ## Requirements
 
 - Ruby 3.2+ (tested on 4.0.1)
-- `pg` gem (libpq client)
-- A running NodeDB instance on `pgwire` (default `localhost:6432`) —
+- `pg` gem (libpq client) — only for the default `:pg` transport
+- `msgpack` gem — for the `:native` transport
+- A running NodeDB instance — `pgwire` on `localhost:6432` for `:pg`,
+  and/or the native protocol on `localhost:6433` for `:native`.
   **v0.2.1 recommended** (resolves BUG-004 parser quirk upstream)
 
 ## Installation
@@ -77,15 +79,24 @@ gem "nodedb-ruby"
 ```ruby
 require "nodedb"
 
+# Default :pg transport (PostgreSQL wire via the pg gem, port 6432)
 conn = NodeDB::Connection.connect(
   host:     "localhost",
-  port:     6432,
-  database: "nodedb",
+  dbname:   "nodedb",
   user:     "nodedb",
   password: ENV["NODEDB_PASSWORD"]
 )
-
 conn.query("SELECT 1+1 AS r").first  # => {"r" => "2"}
+
+# :native transport — NodeDB binary protocol, port 6433, no libpq
+nat = NodeDB::Connection.connect(
+  dbname:   "nodedb",
+  user:     "nodedb",
+  password: ENV["NODEDB_PASSWORD"],
+  protocol: :native
+)
+nat.run("SELECT 1+1 AS r").first  # => {"r" => "2"}
+nat.close
 ```
 
 ### SQL builders

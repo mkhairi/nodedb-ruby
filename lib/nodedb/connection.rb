@@ -1,19 +1,38 @@
 require "pg"
 
 module NodeDB
-  # Thin wrapper around PG::Connection with NodeDB defaults.
-  # Use directly when no ORM is involved (scripts, Sequel, etc.).
+  # Connection factory for NodeDB.
   #
-  #   conn = NodeDB::Connection.connect(host: "localhost", dbname: "mydb",
-  #                                     user: "nodedb", password: "secret")
-  #   result = conn.exec("SHOW COLLECTIONS")
+  # Two transports, selected with `protocol:`:
+  #
+  #   :pg     (default) — PostgreSQL wire via the pg gem, port 6432.
+  #                       Returns a raw PG::Connection (unchanged behaviour).
+  #   :native           — NodeDB native binary protocol, port 6433.
+  #                       Returns a NodeDB::Native::Connection (no libpq).
+  #
+  #   conn = NodeDB::Connection.connect(dbname: "mydb", user: "nodedb",
+  #                                     password: "secret")
+  #   conn = NodeDB::Connection.connect(dbname: "mydb", user: "nodedb",
+  #                                     password: "secret", protocol: :native)
   class Connection
-    DEFAULT_PORT = 6432
+    DEFAULT_PORT        = 6432
+    DEFAULT_NATIVE_PORT = 6433
 
-    # Returns a raw PG::Connection to NodeDB.
-    # Merges NodeDB defaults (port 6432) before delegating to PG.connect.
-    def self.connect(host: "localhost", port: DEFAULT_PORT, dbname:, user:, password:, **opts)
-      PG.connect(host: host, port: port, dbname: dbname, user: user, password: password, **opts)
+    def self.connect(host: "localhost", port: nil, dbname:, user:, password: nil,
+                      protocol: :pg, **opts)
+      case protocol
+      when :pg
+        PG.connect(host: host, port: port || DEFAULT_PORT,
+                   dbname: dbname, user: user, password: password, **opts)
+      when :native
+        NodeDB::Native::Connection.connect(
+          host: host, port: port || DEFAULT_NATIVE_PORT,
+          database: dbname, username: user, password: password, **opts
+        )
+      else
+        raise ArgumentError,
+              "unknown protocol #{protocol.inspect} (expected :pg or :native)"
+      end
     end
   end
 end

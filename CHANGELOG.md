@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.3] — 2026-05-16
+
+### Added
+- Native binary-protocol transport — no libpq / `pg` gem on this path.
+  `NodeDB::Native::Connection` speaks NodeDB's MessagePack-framed native
+  protocol over TCP (default port `6433`): handshake, Trust + Password
+  auth, SQL/DDL, transactions, `set`/`show` params, ping, and a
+  `PG::Result`-shaped `NodeDB::Native::Result` so the existing
+  `NodeDB::SQL::*` builders + `NodeDB::TypeMap` work unchanged over it.
+- `NodeDB::Connection.connect` gains a `protocol:` selector — `:pg`
+  (default, unchanged behaviour, port 6432) or `:native` (port 6433).
+- First isolated RSpec suite for this gem (unit + live-NodeDB
+  integration, the latter auto-skipped when `6433` is unreachable).
+
+### Dependencies
+- Added `msgpack ~> 1.7` (native codec). `pg ~> 1.5` retained — the
+  default `:pg` path and downstream adapters are untouched.
+
 ## [0.1.0.alpha.2] — 2026-05-15
 
 ### Added
@@ -53,6 +71,7 @@ NodeDB.
   - `FTS` — `search` (`text_match()` + `bm25_score()`).
 - Upstream bug log: BUG-001 (resolved), BUG-004 (open at alpha.1).
 
+[0.1.0.alpha.3]: https://github.com/mkhairi/nodedb-ruby/compare/v0.1.0.alpha.2...v0.1.0.alpha.3
 [0.1.0.alpha.2]: https://github.com/mkhairi/nodedb-ruby/compare/v0.1.0.alpha.1...v0.1.0.alpha.2
 [0.1.0.alpha.1]: https://github.com/mkhairi/nodedb-ruby/releases/tag/v0.1.0.alpha.1
 
