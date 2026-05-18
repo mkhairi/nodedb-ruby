@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.4] — 2026-05-18
+
+### Changed
+- **FTS engine removed upstream.** NodeDB dropped the standalone `fts`
+  engine; full-text search is now a `document_strict` collection plus a
+  separate `CREATE FULLTEXT INDEX`. `NodeDB::SQL::Collection` maps
+  `engine: :fts` → `engine='document_strict'` so legacy callers don't
+  break.
+- `NodeDB::SQL::FTS.search` no longer projects `bm25_score` or orders by
+  it (`text_match()` now filters rows server-side and bm25 was unusable
+  for ranking on small corpora). Emits `SELECT id … WHERE text_match()`.
+
+### Added
+- `NodeDB::SQL::FTS.create_index(name:, collection:, column:)` →
+  `CREATE FULLTEXT INDEX …`.
+- `NodeDB::SQL::FTS.drop_index(name)` → `DROP INDEX …` (NodeDB has no
+  `DROP FULLTEXT INDEX`).
+
 ## [0.1.0.alpha.3] — 2026-05-16
 
 ### Added
@@ -71,6 +89,7 @@ NodeDB.
   - `FTS` — `search` (`text_match()` + `bm25_score()`).
 - Upstream bug log: BUG-001 (resolved), BUG-004 (open at alpha.1).
 
+[0.1.0.alpha.4]: https://github.com/mkhairi/nodedb-ruby/compare/v0.1.0.alpha.3...v0.1.0.alpha.4
 [0.1.0.alpha.3]: https://github.com/mkhairi/nodedb-ruby/compare/v0.1.0.alpha.2...v0.1.0.alpha.3
 [0.1.0.alpha.2]: https://github.com/mkhairi/nodedb-ruby/compare/v0.1.0.alpha.1...v0.1.0.alpha.2
 [0.1.0.alpha.1]: https://github.com/mkhairi/nodedb-ruby/releases/tag/v0.1.0.alpha.1

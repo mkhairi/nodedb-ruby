@@ -50,8 +50,14 @@ module NodeDB
         engine_sym = engine&.to_sym
         return nil if (engine_sym.nil? || engine_sym == :document) && opts.empty?
 
+        # NodeDB removed the standalone `fts` engine: full-text search now
+        # lives on a document_strict collection plus a separate
+        # CREATE FULLTEXT INDEX. Map `engine: :fts` to document_strict so
+        # legacy callers/migrations keep working.
+        effective = engine_sym == :fts ? :document_strict : engine_sym
+
         pairs = []
-        pairs << "engine='#{engine}'" if engine_sym && engine_sym != :document
+        pairs << "engine='#{effective}'" if effective && effective != :document
         opts.each { |k, v| pairs << "#{k}='#{v}'" }
         "WITH (#{pairs.join(', ')})"
       end
