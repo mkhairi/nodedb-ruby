@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.5] — 2026-06-07
+
+NodeDB v0.3.0 (commit `25040fdf`) compatibility release. Adds SQL
+builders for three new pgwire-exposed surfaces and a defensive option
+encoder for the existing graph DSL.
+
+### Added
+- `NodeDB::SQL::Graph.stats(collection:, verbose:, as_of:)` — renders
+  `SHOW GRAPH STATS [<collection>] [VERBOSE] [AS OF SYSTEM TIME <ms>]`
+  for NodeDB v0.3.0's persistent O(1) graph-stats counters. Collection
+  is treated as a pre-quoted literal, consistent with the other
+  `SQL::Graph` builders. (#14)
+- `NodeDB::SQL::Collection.create` accepts a `flags:` keyword for
+  NodeDB v0.3.0's free-standing column-list modifier keywords:
+  `BITEMPORAL`, `APPEND_ONLY`, `HASH_CHAIN`. Flags are uppercased and
+  joined into the same parens as the column list. (#15)
+
+### Changed
+- `NodeDB::SQL::Graph.algo` now JSON-encodes Hash and Array option
+  values via `JSON.generate`. Motivating case: NodeDB v0.3.0's
+  `PERSONALIZATION { "alice": 1.0 }` clause on `GRAPH ALGO PAGERANK`
+  rejected Ruby's `{"alice"=>1.0}` hash-rocket form. Scalar options
+  are unaffected. (#13)
+
+### Internal
+- Seeded `spec/sql/` with focused unit specs for `Graph.algo`,
+  `Graph.stats`, and `Collection.create`. Suite grew from 0 SQL specs
+  to 14. Downstream `activerecord-nodedb-adapter` continues to provide
+  integration coverage.
+
 ## [0.1.0.alpha.4] — 2026-05-18
 
 ### Changed
