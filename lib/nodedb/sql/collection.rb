@@ -12,7 +12,16 @@ module NodeDB
       #   Collection.create(:metrics, engine: :timeseries,
       #     engine_options: { retention: "7d" })
       #   # => "CREATE COLLECTION metrics (...) WITH (engine='timeseries', retention='7d')"
-      def self.create(name, engine: nil, columns: [], engine_options: {})
+      #
+      # `flags` is an Array of free-standing modifier keywords appended to the
+      # column-list parens. NodeDB v0.3.0 recognises `BITEMPORAL`,
+      # `APPEND_ONLY`, and `HASH_CHAIN`.
+      #
+      #   Collection.create(:orders, engine: :document_strict,
+      #     columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
+      #     flags:   [:bitemporal])
+      #   # => "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL) WITH (engine='document_strict')"
+      def self.create(name, engine: nil, columns: [], engine_options: {}, flags: [])
         col_parts = columns.dup
 
         if col_parts.empty?
@@ -22,8 +31,11 @@ module NodeDB
           end
         end
 
+        flag_parts = Array(flags).map { |f| f.to_s.upcase }
+        body_parts = col_parts + flag_parts
+
         sql = +"CREATE COLLECTION #{name}"
-        sql << " (#{col_parts.join(", ")})" if col_parts.any?
+        sql << " (#{body_parts.join(", ")})" if body_parts.any?
         with_clause = build_with_clause(engine, engine_options)
         sql << " #{with_clause}" if with_clause
         sql
