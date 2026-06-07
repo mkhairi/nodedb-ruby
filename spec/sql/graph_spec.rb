@@ -34,4 +34,30 @@ RSpec.describe NodeDB::SQL::Graph do
       expect(sql).to eq("GRAPH ALGO PAGERANK ON g")
     end
   end
+
+  describe ".stats" do
+    it "renders the tenant-wide compact form by default" do
+      expect(described_class.stats).to eq("SHOW GRAPH STATS")
+    end
+
+    it "scopes to a single collection when collection is passed pre-quoted" do
+      expect(described_class.stats(collection: "'social_nodes'"))
+        .to eq("SHOW GRAPH STATS 'social_nodes'")
+    end
+
+    it "appends VERBOSE for the per-label-per-collection projection" do
+      expect(described_class.stats(verbose: true))
+        .to eq("SHOW GRAPH STATS VERBOSE")
+    end
+
+    it "appends AS OF SYSTEM TIME with the integer millisecond timestamp" do
+      expect(described_class.stats(as_of: 1_700_000_000_000))
+        .to eq("SHOW GRAPH STATS AS OF SYSTEM TIME 1700000000000")
+    end
+
+    it "combines collection + verbose + as_of in NodeDB-accepted ordering" do
+      expect(described_class.stats(collection: "'g'", verbose: true, as_of: 100))
+        .to eq("SHOW GRAPH STATS 'g' VERBOSE AS OF SYSTEM TIME 100")
+    end
+  end
 end
