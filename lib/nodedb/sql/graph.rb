@@ -32,6 +32,26 @@ module NodeDB
         "GRAPH DELETE EDGE FROM #{from} TO #{to} TYPE #{type}"
       end
 
+      # SHOW GRAPH STATS [<collection>] [VERBOSE] [AS OF SYSTEM TIME <ms>]
+      #
+      # NodeDB v0.3.0+ exposes persistent O(1) edge-store counters
+      # (`edge_count`, `distinct_node_count`, `distinct_label_count`, per-label
+      # counts) via a `SHOW` command. Omitting `collection` aggregates across
+      # the tenant. `verbose: true` returns one row per (collection, label);
+      # `verbose: false` (default) returns one row per collection with labels
+      # collapsed into a JSON array. `as_of` is a millisecond timestamp.
+      #
+      # @param collection [String, nil] pre-quoted collection name literal
+      # @param verbose    [Boolean]
+      # @param as_of      [Integer, nil] millisecond timestamp
+      def self.stats(collection: nil, verbose: false, as_of: nil)
+        sql = +"SHOW GRAPH STATS"
+        sql << " #{collection}" if collection
+        sql << " VERBOSE"        if verbose
+        sql << " AS OF SYSTEM TIME #{as_of.to_i}" if as_of
+        sql
+      end
+
       def self.render_algo_value(value)
         case value
         when Hash, Array then JSON.generate(value)
