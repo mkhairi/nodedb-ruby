@@ -37,8 +37,8 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working — `:pg` (pg gem, simple-query mode, 6432) and `:native` (MessagePack binary protocol, 6433, no libpq) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL — transport-agnostic (work over `:pg` and `:native`) |
-| NodeDB versions  | 0.1.x, 0.2.0, 0.2.1, **0.3.0** (latest retest 2026-06-07 — see *Known issues*) |
-| Test suite       | own suite: SQL builders 14/0; also exercised via `activerecord-nodedb-adapter` (56/0 against v0.3.0) |
+| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-02 against `3a06321e` — see *Known issues*) |
+| Test suite       | own suite: SQL builders 14/0; also exercised via `activerecord-nodedb-adapter` (68/0 against `3a06321e`) |
 
 ## Requirements
 
@@ -46,10 +46,13 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 - `pg` gem (libpq client) — only for the default `:pg` transport
 - `msgpack` gem — for the `:native` transport
 - A running NodeDB instance — `pgwire` on `localhost:6432` for `:pg`,
-  and/or the native protocol on `localhost:6433` for `:native`.
-  **v0.3.0 recommended** (adds `SHOW GRAPH STATS`, personalized
-  PageRank, `BITEMPORAL` modifier, in-process pg_catalog evaluator,
-  operational `SHOW` surface)
+  and/or the native protocol on `localhost:6433` for `:native`
+  (native is on hold — see *Known issues*). **Latest upstream `main`
+  recommended** (verified against `3a06321e`: scoped graph stats,
+  bitemporal reads, spatial geometry constructors, `version()` /
+  `current_setting()` probes). Note: post-June builds changed the
+  on-disk format — old data directories make the daemon panic at
+  boot; start fresh.
 
 ## Installation
 
@@ -148,12 +151,14 @@ NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
 # WITH (engine='timeseries', retention='7d', compression='zstd')
 
 # flags: free-standing column-list modifiers (NodeDB v0.3.0+).
-# Accepts :bitemporal / :append_only / :hash_chain.
+# Accepts :bitemporal / :append_only / :hash_chain. BITEMPORAL
+# collections get the ENGINE = suffix spelling — the WITH form builds
+# a broken bitemporal schema upstream (BUG-027).
 NodeDB::SQL::Collection.create("orders", engine: :document_strict,
   columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
   flags:   [:bitemporal])
 # CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL)
-# WITH (engine='document_strict')
+# ENGINE = document_strict
 
 # Personalized PageRank — Hash options are JSON-encoded so the
 # rendered SQL matches NodeDB v0.3.0's PERSONALIZATION clause.
@@ -202,69 +207,53 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 ## Known issues
 
-NodeDB-side parser quirks that the SQL builders intentionally work around,
-plus the upstream bugs that the downstream ActiveRecord adapter has had to
-dance around. Documented in `docs/bugs/` in this repo and, in much more
-detail, in the [AR adapter bug index][ar-bugs]. Last retested:
-**2026-06-07** against **NodeDB v0.3.0** (commit `25040fdf`).
+NodeDB-side quirks the SQL builders work around, tracking the
+**latest upstream only** (resolved issues are pruned; git history and
+the CHANGELOG keep the record). Last retested: **2026-07-02** against
+upstream `main` at `3a06321e` (post-v0.3.0). The full open-bug index
+with reproductions lives in the [AR adapter bug log][ar-bugs]; the
+user-facing summary is [KNOWN_ISSUES.md][ar-known].
 
 [ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/bugs/README.md
+[ar-known]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/KNOWN_ISSUES.md
 
-### Resolved upstream
-- **BUG-001** `ResourcesExhausted` on non-timeseries INSERT — fixed in NodeDB
-  v0.2.0.
-- **BUG-004** `DROP COLLECTION IF EXISTS` parser quirk — fixed in v0.2.1.
-- **BUG-005 / 006 / 009 / 010 / 013** — prepared-statement RowDescription,
-  boolean OID 0, INSERT command tag, `text_match()` server-side filtering,
-  and FTS fuzzy projection — all resolved across the v0.2.x line. Builder
-  workarounds retired (`FTS.search` no longer projects `bm25_score`).
-- **BUG-017** `SHOW server_version` stuck at `"NodeDB 0.1.0"` — fixed in
-  v0.2.1; v0.3.0 reports `"NodeDB 0.3.0"`.
+### Affecting this gem's surface
 
-### Still in play (v0.3.0, retested 2026-06-07)
-- **BUG-002 / 003** — `SELECT version()` and `current_setting('server_version_num')`
-  return empty. Callers must read `SHOW server_version` and parse it
-  themselves (the AR adapter does this in `nodedb_version`).
-- **BUG-008** — `DELETE … WHERE id = ?` inside a transaction is dropped on
-  commit on `document_strict` + text PK collections. Affects every
-  `Model.destroy` through the AR adapter; psql probe with `INT NOT NULL PK`
-  persists.
-- **BUG-011 / 012** — Spatial INSERTs reject `ST_GeomFromText(…)` with a
-  hard parse error. The spatial engine is effectively read-only over SQL on
-  this build.
-- **BUG-014** — `pg_try_advisory_lock` / `pg_advisory_unlock` parse but
-  return zero rows. AR migrations need the adapter's no-op stub.
-- **BUG-015** — DROP+CREATE in the retention window resurrects rows from
-  the prior incarnation of the collection.
-- **BUG-016** — `document_strict` with PK on a non-`id` column: the 2nd
-  INSERT collides on empty built-in `id`.
-- **BUG-018** — Native transport returns document-backed rows as raw
-  `{data,id}` blobs (KV + vector still affected; document model works
-  through adapter-side unwrap; pgwire unaffected).
-- **BUG-019** — pg_catalog vquery evaluator rejects `::regclass` casts,
-  `ANY(current_schemas)`, cross-vtable joins, and `pg_type.typelem`.
-  The AR adapter bypasses every affected catalog query.
-- **BUG-020** — `SHOW GRAPH STATS '<collection>'` returns all-zero
-  counters even when the tenant-wide form proves the collection has
-  edges. `SQL::Graph.stats` renders the scoped form; consumers needing
-  correct values must call the tenant-wide form and filter in Ruby
-  (the AR adapter's `Model.graph_stats` already does this).
-- **BUG-021** — `BITEMPORAL` collections accept INSERTs but every
-  SELECT shape returns zero rows. The `flags: [:bitemporal]` modifier
-  is ship-ready as a DDL surface; reads are write-only until upstream
-  fixes the read path.
+- **BUG-025 — table-qualified WHERE refs silently match zero rows**
+  (except TEXT-PK equality). All builders emit unqualified columns;
+  raw-SQL callers must do the same (the AR adapter rewrites
+  AR-generated SQL automatically).
+- **BUG-027 — engine spellings diverge upstream.** `Collection.create`
+  picks per flag: `ENGINE =` suffix for BITEMPORAL, `WITH (engine=...)`
+  otherwise. Don't hand-write the other combination.
+- **Bitemporal write caveats** — INSERT/DELETE committed inside
+  explicit transactions are lost on bitemporal collections (BUG-024);
+  write autocommit. DROP + CREATE of a bitemporal collection
+  resurrects the old version history (BUG-028). A user column named
+  `bitemporal_id` triggers the same txn loss on plain collections
+  (BUG-026).
+- **Graph scoping** — `MATCH ... IN <collection>` ignores the
+  collection scope upstream (BUG-023); no MATCH builder ships until it
+  works. Graph builders take bare collection names (quoted identifiers
+  create edge-store keys that scoped stats lookups miss).
+- **BUG-003** — libpq's `PQserverVersion()` still raises
+  (`server_version` ParameterStatus is not numeric-parseable). Query
+  `current_setting('server_version_num')` instead — it returns a real
+  value on current upstream.
+- **BUG-018 — native transport read shapes** (document full-scan
+  fragments, KV `value` missing, vector `distance` nil). The
+  `:native` transport is **on hold**; use `:pg` (pgwire) — the plan is
+  to adopt the official NodeDB SDK after an official release.
 
-### Builder-level quirks (no upstream bug filed, no SQL-level fix expected)
-- **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits bare
-  `column` / `table` names; quoting via `"col"` returns no rows.
-- **Qualified column refs return nil** — `articles.id` and `"articles"."id"`
-  resolve to nil. ActiveRecord callers must select unqualified columns.
+### Builder-level quirks (upstream conventions, no fix expected)
+
+- **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits
+  bare `column` / `table` names; quoting via `"col"` returns no rows.
 - **Schemaless `SELECT *` returns wrapped JSON** — schemaless document
-  collections return a single `{"result" => "<json>"}` column. Either project
+  collections return a single `{"result" => "<json>"}` column. Project
   explicit columns or use `engine: :document_strict`.
 - **No prepared statement support** — NodeDB sends `DataRow` without
-  `RowDescription` for prepared statements, so callers must use simple-query
-  mode.
+  `RowDescription` for prepared statements; use simple-query mode.
 
 ## License
 
