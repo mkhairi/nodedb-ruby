@@ -1,29 +1,34 @@
 # NodeDB upstream bug log
 
-NodeDB-side bugs that affect this gem's SQL builders or connection layer.
+NodeDB-side bugs that affect this gem's SQL builders or connection
+layer. This log tracks the **latest upstream only** — resolved bugs
+are pruned (git history keeps their docs). Pruned so far: 001, 004.
 
-Re-tested: **2026-05-15** against **NodeDB v0.2.1**.
+Re-tested: **2026-07-02** against upstream `main` at `3a06321e`
+(post-v0.3.0).
 
-For the full cross-gem bug log (17 entries spanning adapter, type map, and
-engine surfaces), see
-[`../../../activerecord-nodedb-adapter/docs/bugs/README.md`][ar-bugs].
+The full cross-gem bug index (open bugs, adapter workarounds,
+reproductions) lives in the AR adapter repo:
+[`activerecord-nodedb-adapter/docs/bugs`][ar-bugs] and the user-facing
+summary in [`docs/KNOWN_ISSUES.md`][ar-known].
 
-[ar-bugs]: ../../../activerecord-nodedb-adapter/docs/bugs/README.md
+[ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/bugs/README.md
+[ar-known]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/KNOWN_ISSUES.md
 
-| ID  | Title                                                          | Status |
-| --- | -------------------------------------------------------------- | ------ |
-| 001 | INSERT returns `ResourcesExhausted` on non-timeseries engines  | RESOLVED — fixed in `nodedb/src/config/engine.rs` + `memory/startup.rs` |
-| 004 | `DROP COLLECTION IF EXISTS` parses `IF` as a name when collection exists | **RESOLVED** in v0.2.1 — `Collection.drop_if_exists` workaround redundant but kept |
-
-## Workarounds shipped here
+## Workarounds shipped in this gem
 
 | Bug | Code path |
 | --- | --------- |
-| 004 | `NodeDB::SQL::Collection.drop_if_exists` emits a plain `DROP COLLECTION` and the caller rescues a not-found error (redundant on v0.2.1+, kept for older binaries) |
+| BUG-027 | `SQL::Collection.create` picks the engine spelling per flag: `ENGINE = <engine>` suffix when the `BITEMPORAL` flag is present, `WITH (engine=...)` otherwise. Upstream resolves the two spellings through different code paths and each is broken for a different case (WITH+BITEMPORAL builds a broken bitemporal schema; `ENGINE = timeseries` silently fails to apply the engine). Collapse to one spelling when upstream unifies them |
 
-## Workaround retirement
+## Builder conventions forced by upstream quirks
 
-When this gem drops support for NodeDB < 0.2.1 (likely at beta release),
-remove the BUG-004 workaround in
-`NodeDB::SQL::Collection.drop_if_exists` via a `chore/remove-bug004-workaround`
-PR.
+- `Vector.search` emits bare column/table names — `SEARCH` rejects
+  quoted identifiers.
+- Graph builders take the bare collection name for `IN` / `ON`
+  clauses — the edge store keys collections by the IN-clause spelling
+  verbatim, so double-quoted identifiers create keys that scoped
+  `SHOW GRAPH STATS` lookups miss.
+- All builders emit unqualified column references — table-qualified
+  refs in WHERE silently match zero rows upstream (BUG-025; the AR
+  adapter additionally rewrites AR-generated SQL).
