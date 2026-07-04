@@ -210,11 +210,13 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 NodeDB-side quirks the SQL builders work around, tracking the
 **latest upstream only** (resolved issues are pruned; git history and
 the CHANGELOG keep the record). Last retested: **2026-07-04** against
-upstream `main` at `67c4572d` (post-v0.3.0). The full open-bug index
-with reproductions lives in the [AR adapter bug log][ar-bugs]; the
-user-facing summary is [KNOWN_ISSUES.md][ar-known].
+upstream `main` at `f8a4df44` (post-v0.3.0). The canonical per-bug
+records (reproductions, workaround history, retests) live in the
+[AR adapter issue tracker][ar-bugs] — titles prefixed
+`[upstream:NodeDB] BUG-NNN`; the user-facing summary is
+[KNOWN_ISSUES.md][ar-known].
 
-[ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/bugs/README.md
+[ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/issues?q=%22%5Bupstream%3ANodeDB%5D%22
 [ar-known]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/KNOWN_ISSUES.md
 
 ### Affecting this gem's surface
