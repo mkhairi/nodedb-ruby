@@ -37,8 +37,8 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working — `:pg` (pg gem, simple-query mode, 6432) and `:native` (MessagePack binary protocol, 6433, no libpq) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL — transport-agnostic (work over `:pg` and `:native`) |
-| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-02 against `3a06321e` — see *Known issues*) |
-| Test suite       | own suite: SQL builders 14/0; also exercised via `activerecord-nodedb-adapter` (68/0 against `3a06321e`) |
+| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-04 against `67c4572d` — see *Known issues*) |
+| Test suite       | own suite: 53 examples; also exercised via `activerecord-nodedb-adapter` (69/0 against `67c4572d`) |
 
 ## Requirements
 
@@ -47,12 +47,12 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 - `msgpack` gem — for the `:native` transport
 - A running NodeDB instance — `pgwire` on `localhost:6432` for `:pg`,
   and/or the native protocol on `localhost:6433` for `:native`
-  (native is on hold — see *Known issues*). **Latest upstream `main`
-  recommended** (verified against `3a06321e`: scoped graph stats,
-  bitemporal reads, spatial geometry constructors, `version()` /
-  `current_setting()` probes). Note: post-June builds changed the
-  on-disk format — old data directories make the daemon panic at
-  boot; start fresh.
+  (`:pg` remains the primary transport — see *Known issues*).
+  **Latest upstream `main` recommended** (verified against `67c4572d`:
+  native result-shape parity, scoped graph stats, spatial geometry
+  constructors, `version()` / `current_setting()` probes). Note:
+  post-June builds changed the on-disk format — old data directories
+  make the daemon panic at boot; start fresh.
 
 ## Installation
 
@@ -209,8 +209,8 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 NodeDB-side quirks the SQL builders work around, tracking the
 **latest upstream only** (resolved issues are pruned; git history and
-the CHANGELOG keep the record). Last retested: **2026-07-02** against
-upstream `main` at `3a06321e` (post-v0.3.0). The full open-bug index
+the CHANGELOG keep the record). Last retested: **2026-07-04** against
+upstream `main` at `67c4572d` (post-v0.3.0). The full open-bug index
 with reproductions lives in the [AR adapter bug log][ar-bugs]; the
 user-facing summary is [KNOWN_ISSUES.md][ar-known].
 
@@ -240,18 +240,19 @@ user-facing summary is [KNOWN_ISSUES.md][ar-known].
   (`server_version` ParameterStatus is not numeric-parseable). Query
   `current_setting('server_version_num')` instead — it returns a real
   value on current upstream.
-- **BUG-018 — native transport read shapes** (document full-scan
-  fragments, KV `value` missing, vector `distance` nil). The
-  `:native` transport is **on hold**; use `:pg` (pgwire) — the plan is
-  to adopt the official NodeDB SDK after an official release.
+- **BUG-030 — GROUP BY output drops group-key column aliases** and
+  returns empty cells for unaliased aggregates (regression on
+  `67c4572d`). Alias aggregates; read group keys by base column name
+  (the AR adapter re-aliases automatically).
+- **`:native` transport** — at result-shape parity with pgwire since
+  the upstream response-shaping rework fixed BUG-018, but `:pg`
+  (pgwire) remains the primary transport; the plan is still to adopt
+  the official NodeDB SDK after an official release.
 
 ### Builder-level quirks (upstream conventions, no fix expected)
 
 - **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits
   bare `column` / `table` names; quoting via `"col"` returns no rows.
-- **Schemaless `SELECT *` returns wrapped JSON** — schemaless document
-  collections return a single `{"result" => "<json>"}` column. Project
-  explicit columns or use `engine: :document_strict`.
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements; use simple-query mode.
 
