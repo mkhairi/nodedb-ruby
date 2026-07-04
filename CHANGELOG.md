@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.6] — 2026-07-04
+
+Tracks NodeDB upstream `main` at `f8a4df44` (post-v0.3.0).
+
+### Fixed
+
+- `SQL::Collection.create` emits the `ENGINE = <engine>` suffix for
+  BITEMPORAL collections and keeps `WITH (engine=...)` for everything
+  else — the two spellings diverge upstream (BUG-027): the WITH form
+  plus the BITEMPORAL flag builds a broken schema (#18).
+
+### Documentation / tests
+
+- README refreshed for the upstream response-shaping rework: BUG-018
+  resolved (`:native` at result-shape parity with pgwire; schemaless
+  `SELECT *` projects flat columns), BUG-030 GROUP BY alias-drop
+  caveat added; `:pg` stays the primary transport pending the official
+  SDK (#21). Known-issues list trimmed to the latest upstream only
+  (#19).
+- Stale specs aligned with current behaviour: BITEMPORAL builder
+  expectation (ENGINE suffix) and the native round-trip now asserting
+  projected columns instead of the `{data,id}` blob (#20).
+
 ## [0.1.0.alpha.5] — 2026-06-07
 
 NodeDB v0.3.0 (commit `25040fdf`) compatibility release. Adds SQL
