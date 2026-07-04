@@ -20,15 +20,20 @@ Status: **alpha** (`0.1.0.alpha.N`).
 
 ## Tests
 
-This gem has **no isolated RSpec suite yet**. SQL builders and connection
-logic are exercised through `activerecord-nodedb-adapter`'s integration
-suite. Until a local suite lands:
+```bash
+bundle exec rspec
+```
+
+Own suite: SQL-builder unit specs plus `:pg` / `:native` integration
+specs (the latter need a live NodeDB on `localhost:6432` / `:6433`;
+they skip when unreachable). Must stay 0 failures before any PR
+merges. The gem is also exercised end-to-end through
+`activerecord-nodedb-adapter`'s suite — run that too before a PR that
+changes anything in `lib/nodedb/`:
 
 ```bash
 cd ../activerecord-nodedb-adapter && bundle exec rspec
 ```
-
-before opening a PR that changes anything in `lib/nodedb/`.
 
 ## Release checklist additions
 
