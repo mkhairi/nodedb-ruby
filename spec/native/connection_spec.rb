@@ -38,8 +38,9 @@ RSpec.describe NodeDB::Native::Connection, :integration do
     conn.run(NodeDB::SQL::Collection.create(coll, columns: ["id TEXT PRIMARY KEY", "name TEXT"]))
     expect(conn.run("INSERT INTO #{coll} (id, name) VALUES ('1', 'ada')").cmd_tuples).to eq(1)
     result = conn.run("SELECT * FROM #{coll}")
-    # NodeDB document engine returns the row as a JSON `data` blob.
-    expect(result.first["data"]).to include("ada")
+    # Native projects the declared columns, same as pgwire (upstream
+    # response-shaping rework; BUG-018 resolved).
+    expect(result.first["name"]).to eq("ada")
   ensure
     conn.run(NodeDB::SQL::Collection.drop_if_exists(coll)) rescue nil
   end
