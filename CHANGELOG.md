@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.8] — 2026-07-08
+
+Tracks NodeDB upstream `main` at `8e84501a` (unchanged since alpha.7).
+
+### Added
+
+- `NodeDB::Pool` — thread-safe connection pool over either transport
+  (wraps the `connection_pool` gem; lazy connect; `with` / `exec` /
+  `reload` / `shutdown`). (#27)
+- `NodeDB::Streaming.each_row` — row-at-a-time result iteration via
+  libpq single-row mode for large vector / FTS / timeseries scans;
+  Enumerator form; early break cancels and drains, connection stays
+  usable. `:pg` transport only. (#28)
+- `NodeDB::Schema.columns` / `.collections` — typed DESCRIBE
+  introspection: raw + pg types, oid, nullable, primary-key collapse
+  of DESCRIBE's duplicate rows, `__`-internal filtering. (#29)
+
+### Dependencies
+
+- New runtime dependency: `connection_pool >= 2.4`.
+
 ## [0.1.0.alpha.7] — 2026-07-07
 
 Tracks NodeDB upstream `main` at `8e84501a` (post-v0.3.0), which
