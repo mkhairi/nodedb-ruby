@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.7] — 2026-07-07
+
+Tracks NodeDB upstream `main` at `8e84501a` (post-v0.3.0), which
+unified the CREATE COLLECTION engine-clause code paths (BUG-027
+fixed).
+
+### Removed
+
+- `SQL::Collection.create` per-flag engine-spelling picker: the
+  builder now emits the single `WITH (engine=..., <options>)` form
+  for every engine/flag combination, BITEMPORAL included (#25).
+  Reverts the alpha.6 workaround below.
+
 ## [0.1.0.alpha.6] — 2026-07-04
 
 Tracks NodeDB upstream `main` at `f8a4df44` (post-v0.3.0).
