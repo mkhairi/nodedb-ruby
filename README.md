@@ -125,6 +125,22 @@ Every other keyword (`protocol: :native`, `host:`, `port:`, …) passes
 through to `NodeDB::Connection.connect`. A connection that dies stays
 in the pool — call `reload` to cycle them.
 
+### Streaming results
+
+Row-at-a-time iteration for large scans, via libpq single-row mode
+(`:pg` transport only — `:native` buffers whole results by design):
+
+```ruby
+NodeDB::Streaming.each_row(conn, "SELECT id, embedding FROM big_scan") do |row|
+  # row is a Hash; rows arrive as the server produces them
+end
+
+NodeDB::Streaming.each_row(conn, sql).lazy.take(100).to_a  # Enumerator form
+```
+
+Breaking out early cancels the in-flight query and drains the wire, so
+the connection stays usable.
+
 ### SQL builders
 
 The builders return raw SQL strings; they do not run anything. Pass the result
@@ -219,7 +235,8 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 ### Pending
 - [x] Connection pooling helper (`NodeDB::Pool`, wraps `connection_pool`)
-- [ ] Streaming result iterator for large vector / FTS scans
+- [x] Streaming result iterator (`NodeDB::Streaming.each_row`, libpq
+      single-row mode; `:pg` transport)
 - [ ] Async / fiber-based adapter for `async-pg`
 - [ ] Schema introspection helpers (DESCRIBE wrapper that yields typed columns)
 - [ ] First-class `RETURNING` parsing for `INSERT … RETURNING id`
