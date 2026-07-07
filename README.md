@@ -141,6 +141,21 @@ NodeDB::Streaming.each_row(conn, sql).lazy.take(100).to_a  # Enumerator form
 Breaking out early cancels the in-flight query and drains the wire, so
 the connection stays usable.
 
+### Schema introspection
+
+Typed DESCRIBE wrapper (either transport):
+
+```ruby
+NodeDB::Schema.columns(conn, "articles")
+# => [#<data Column name="id", type="TEXT", pg_type="text", oid=25,
+#            nullable=false, primary_key=true>, ...]
+NodeDB::Schema.columns(conn, "articles", internal: true)  # include __storage etc.
+NodeDB::Schema.collections(conn)                          # => ["articles", ...]
+```
+
+Normalizes the raw DESCRIBE quirks (duplicate primary-key rows,
+`__`-prefixed internals) so adapters don't have to.
+
 ### SQL builders
 
 The builders return raw SQL strings; they do not run anything. Pass the result
@@ -238,7 +253,8 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 - [x] Streaming result iterator (`NodeDB::Streaming.each_row`, libpq
       single-row mode; `:pg` transport)
 - [ ] Async / fiber-based adapter for `async-pg`
-- [ ] Schema introspection helpers (DESCRIBE wrapper that yields typed columns)
+- [x] Schema introspection helpers (`NodeDB::Schema.columns` /
+      `.collections` — typed, deduped, internals filtered)
 - [ ] First-class `RETURNING` parsing for `INSERT … RETURNING id`
 - [x] CHANGELOG.md
 - [x] RSpec coverage for SQL builders in isolation (`spec/sql/`, 14 examples on alpha.5; expanding per release)
