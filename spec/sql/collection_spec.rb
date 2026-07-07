@@ -20,7 +20,7 @@ RSpec.describe NodeDB::SQL::Collection do
       )
     end
 
-    it "appends a BITEMPORAL flag inside the column-list parens and uses the ENGINE suffix (BUG-027)" do
+    it "appends a BITEMPORAL flag inside the column-list parens with the WITH clause" do
       sql = described_class.create(
         :orders,
         engine:  :document_strict,
@@ -30,7 +30,7 @@ RSpec.describe NodeDB::SQL::Collection do
 
       expect(sql).to eq(
         "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL) " \
-        "ENGINE = document_strict"
+        "WITH (engine='document_strict')"
       )
     end
 
