@@ -104,6 +104,27 @@ nat.run("SELECT 1+1 AS r").first  # => {"r" => "2"}
 nat.close
 ```
 
+### Connection pool
+
+Thread-safe pool over either transport (wraps the `connection_pool`
+gem; connections are created lazily on first checkout):
+
+```ruby
+pool = NodeDB::Pool.new(
+  size: 5, timeout: 5,
+  dbname: "nodedb", user: "nodedb", password: ENV["NODEDB_PASSWORD"]
+)
+
+pool.with { |conn| conn.exec("SELECT 1+1 AS r") }
+pool.exec("SELECT 1+1 AS r")   # checkout + exec + checkin
+pool.reload                    # discard idle connections, reconnect lazily
+pool.shutdown
+```
+
+Every other keyword (`protocol: :native`, `host:`, `port:`, …) passes
+through to `NodeDB::Connection.connect`. A connection that dies stays
+in the pool — call `reload` to cycle them.
+
 ### SQL builders
 
 The builders return raw SQL strings; they do not run anything. Pass the result
@@ -197,7 +218,7 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
   - [x] `FTS.search` (uses `text_match()` server-side filtering; bm25 projection retired upstream 2026-05-18) + `create_index` / `drop_index`
 
 ### Pending
-- [ ] Connection pooling helper (caller currently manages `pg` connections)
+- [x] Connection pooling helper (`NodeDB::Pool`, wraps `connection_pool`)
 - [ ] Streaming result iterator for large vector / FTS scans
 - [ ] Async / fiber-based adapter for `async-pg`
 - [ ] Schema introspection helpers (DESCRIBE wrapper that yields typed columns)
