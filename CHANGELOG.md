@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.9] — 2026-07-08
+
+Tracks NodeDB upstream `main` at `8e84501a`.
+
+### Changed (breaking)
+
+- `SQL::Graph.delete_edge` now requires `in_collection:` and renders
+  `GRAPH DELETE EDGE IN <collection> ...` — current upstream rejects
+  the IN-less form with a parse error (same syntax change that
+  previously hit `insert_edge`). (#31)
+
+### Added
+
+- `Schema.normalize(rows, internal:)` — pure, connection-free
+  normalization of raw DESCRIBE hashes for adapters that fetch
+  DESCRIBE through their own connection machinery; `Schema.columns`
+  delegates to it. (#32)
+
+### Tooling
+
+- Daemon-less GitHub Actions CI (Ruby 3.2 + 3.4; integration specs
+  skip). (#33)
+- standardrb baseline, all offenses fixed, CI-gated. (#34)
+
 ## [0.1.0.alpha.8] — 2026-07-08
 
 Tracks NodeDB upstream `main` at `8e84501a` (unchanged since alpha.7).
