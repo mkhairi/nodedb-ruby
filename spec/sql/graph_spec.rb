@@ -2,6 +2,16 @@ require "spec_helper"
 require "nodedb/sql/graph"
 
 RSpec.describe NodeDB::SQL::Graph do
+  describe ".delete_edge" do
+    it "renders the IN-clause form current upstream requires" do
+      sql = described_class.delete_edge(
+        from: "'alice'", to: "'bob'", type: "'knows'", in_collection: "social"
+      )
+
+      expect(sql).to eq("GRAPH DELETE EDGE IN social FROM 'alice' TO 'bob' TYPE 'knows'")
+    end
+  end
+
   describe ".algo" do
     it "renders scalar options uppercased and stringified" do
       sql = described_class.algo(table: "users", algo: :pagerank, damping: 0.85, iterations: 20)
