@@ -11,7 +11,7 @@ RSpec.describe NodeDB::SQL::Collection do
     it "renders a strict-schema collection with the WITH clause" do
       sql = described_class.create(
         :orders,
-        engine:  :document_strict,
+        engine: :document_strict,
         columns: ["id TEXT PRIMARY KEY", "total NUMERIC"]
       )
 
@@ -23,9 +23,9 @@ RSpec.describe NodeDB::SQL::Collection do
     it "appends a BITEMPORAL flag inside the column-list parens with the WITH clause" do
       sql = described_class.create(
         :orders,
-        engine:  :document_strict,
+        engine: :document_strict,
         columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
-        flags:   [:bitemporal]
+        flags: [:bitemporal]
       )
 
       expect(sql).to eq(

@@ -5,7 +5,7 @@ RSpec.describe NodeDB::Schema do
   def nodedb_pg_up?
     require "socket"
     Socket.tcp(NODEDB_NATIVE_HOST, 6432, connect_timeout: 1) { true }
-  rescue StandardError
+  rescue
     false
   end
 
@@ -61,10 +61,10 @@ RSpec.describe NodeDB::Schema do
   describe ".normalize" do
     it "normalizes raw DESCRIBE hashes without a connection" do
       cols = described_class.normalize([
-        { "field" => "id", "type" => "TEXT", "nullable" => "false" },
-        { "field" => "id", "type" => "TEXT PRIMARY KEY", "nullable" => "true" },
-        { "field" => "n", "type" => "INTEGER", "nullable" => "true" },
-        { "field" => "__storage", "type" => "document_strict", "nullable" => "false" }
+        {"field" => "id", "type" => "TEXT", "nullable" => "false"},
+        {"field" => "id", "type" => "TEXT PRIMARY KEY", "nullable" => "true"},
+        {"field" => "n", "type" => "INTEGER", "nullable" => "true"},
+        {"field" => "__storage", "type" => "document_strict", "nullable" => "false"}
       ])
 
       expect(cols.map(&:name)).to eq(%w[id n])

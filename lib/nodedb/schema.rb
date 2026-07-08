@@ -28,13 +28,13 @@ module NodeDB
       rows = rows.reject { |r| r["field"].to_s.start_with?("__") } unless internal
 
       rows.group_by { |r| r["field"].to_s }.map do |field, dups|
-        primary  = dups.any? { |r| r["type"].to_s.upcase.include?("PRIMARY KEY") }
+        primary = dups.any? { |r| r["type"].to_s.upcase.include?("PRIMARY KEY") }
         raw_type = dups.first["type"].to_s.sub(/\s+PRIMARY KEY\z/i, "")
         pg_type, oid = TypeMap.resolve(raw_type)
         nullable = !primary && dups.all? { |r| r["nullable"].to_s == "true" }
 
         Column.new(name: field, type: raw_type, pg_type: pg_type, oid: oid,
-                   nullable: nullable, primary_key: primary)
+          nullable: nullable, primary_key: primary)
       end
     end
 

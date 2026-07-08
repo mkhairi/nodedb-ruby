@@ -5,7 +5,7 @@ RSpec.describe NodeDB::Streaming do
   def nodedb_pg_up?
     require "socket"
     Socket.tcp(NODEDB_NATIVE_HOST, 6432, connect_timeout: 1) { true }
-  rescue StandardError
+  rescue
     false
   end
 
@@ -24,7 +24,7 @@ RSpec.describe NodeDB::Streaming do
   before(:each) do
     conn.exec("CREATE COLLECTION #{name} (id TEXT PRIMARY KEY, n INTEGER) " \
               "WITH (engine='document_strict')")
-    values = (1..25).map { |i| "('r#{format('%02d', i)}', #{i})" }.join(", ")
+    values = (1..25).map { |i| "('r#{format("%02d", i)}', #{i})" }.join(", ")
     conn.exec("INSERT INTO #{name} (id, n) VALUES #{values}")
   end
 

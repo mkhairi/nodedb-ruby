@@ -27,14 +27,14 @@ module NodeDB
         if col_parts.empty?
           case engine&.to_sym
           when :timeseries then col_parts = ["ts TIMESTAMP TIME_KEY", "value FLOAT"]
-          when :kv         then col_parts = ["key TEXT PRIMARY KEY", "value TEXT"]
+          when :kv then col_parts = ["key TEXT PRIMARY KEY", "value TEXT"]
           end
         end
 
         flag_parts = Array(flags).map { |f| f.to_s.upcase }
         body_parts = col_parts + flag_parts
 
-        sql = +"CREATE COLLECTION #{name}"
+        sql = "CREATE COLLECTION #{name}"
         sql << " (#{body_parts.join(", ")})" if body_parts.any?
         with_clause = build_with_clause(engine, engine_options.to_h)
         sql << " #{with_clause}" if with_clause
@@ -64,7 +64,7 @@ module NodeDB
         pairs = []
         pairs << "engine='#{effective}'" if effective
         opts.each { |k, v| pairs << "#{k}='#{v}'" }
-        "WITH (#{pairs.join(', ')})"
+        "WITH (#{pairs.join(", ")})"
       end
       private_class_method :build_with_clause
 
@@ -77,7 +77,7 @@ module NodeDB
         engine_sym = engine&.to_sym
         return nil if engine_sym.nil? || engine_sym == :document
 
-        engine_sym == :fts ? :document_strict : engine_sym
+        (engine_sym == :fts) ? :document_strict : engine_sym
       end
       private_class_method :effective_engine
     end

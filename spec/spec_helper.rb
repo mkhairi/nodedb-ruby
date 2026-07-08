@@ -2,9 +2,9 @@ require "nodedb"
 
 NODEDB_NATIVE_HOST = ENV.fetch("NODEDB_HOST", "localhost")
 NODEDB_NATIVE_PORT = Integer(ENV.fetch("NODEDB_NATIVE_PORT", "6433"))
-NODEDB_DATABASE    = ENV.fetch("NODEDB_DATABASE", "nodedb")
-NODEDB_USER        = ENV.fetch("NODEDB_USER", "nodedb")
-NODEDB_PASSWORD    = ENV.fetch("NODEDB_PASSWORD") do
+NODEDB_DATABASE = ENV.fetch("NODEDB_DATABASE", "nodedb")
+NODEDB_USER = ENV.fetch("NODEDB_USER", "nodedb")
+NODEDB_PASSWORD = ENV.fetch("NODEDB_PASSWORD") do
   path = File.expand_path("~/.local/share/nodedb/.superuser_password")
   File.exist?(path) ? File.read(path).strip : nil
 end
@@ -12,7 +12,7 @@ end
 def nodedb_native_up?
   require "socket"
   Socket.tcp(NODEDB_NATIVE_HOST, NODEDB_NATIVE_PORT, connect_timeout: 1) { true }
-rescue StandardError
+rescue
   false
 end
 

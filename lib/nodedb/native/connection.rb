@@ -13,10 +13,10 @@ module NodeDB
 
       attr_reader :server_version, :capabilities, :limits
 
-      def self.connect(host: "localhost", port: DEFAULT_PORT, database:, username:,
-                        password: nil, connect_timeout: nil, **_ignored)
+      def self.connect(database:, username:, host: "localhost", port: DEFAULT_PORT,
+        password: nil, connect_timeout: nil, **_ignored)
         new(host: host, port: port, database: database, username: username,
-            password: password, connect_timeout: connect_timeout)
+          password: password, connect_timeout: connect_timeout)
       end
 
       def initialize(host:, port:, database:, username:, password:, connect_timeout: nil)
@@ -32,8 +32,8 @@ module NodeDB
         @socket.write(Frame.hello_payload)
         ack = Frame.read_handshake_ack(@socket)
         @server_version = ack.server_version
-        @capabilities   = ack.capabilities
-        @limits         = ack.limits
+        @capabilities = ack.capabilities
+        @limits = ack.limits
 
         authenticate(username, password, database)
       rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, SocketError => e
@@ -41,20 +41,20 @@ module NodeDB
       end
 
       def run(sql)
-        to_result(send_op(Protocol::OP_SQL, { Protocol::FID_SQL => sql }))
+        to_result(send_op(Protocol::OP_SQL, {Protocol::FID_SQL => sql}))
       end
-      alias exec run
-      alias query run
-      alias execute run
+      alias_method :exec, :run
+      alias_method :query, :run
+      alias_method :execute, :run
 
       def run_params(sql, params = [])
-        fields = { Protocol::FID_SQL => sql }
+        fields = {Protocol::FID_SQL => sql}
         unless params.nil? || params.empty?
           fields[Protocol::FID_SQL_PARAMS] = params.map { |p| Protocol.encode_value(p) }
         end
         to_result(send_op(Protocol::OP_SQL, fields))
       end
-      alias exec_params run_params
+      alias_method :exec_params, :run_params
 
       def begin
         check(send_op(Protocol::OP_BEGIN, {}))
@@ -70,11 +70,11 @@ module NodeDB
 
       def set_param(key, value)
         check(send_op(Protocol::OP_SET,
-                      { Protocol::FID_KEY => key, Protocol::FID_VALUE => value }))
+          {Protocol::FID_KEY => key, Protocol::FID_VALUE => value}))
       end
 
       def show_param(key)
-        resp = send_op(Protocol::OP_SHOW, { Protocol::FID_KEY => key })
+        resp = send_op(Protocol::OP_SHOW, {Protocol::FID_KEY => key})
         raise_if_error(resp)
         resp.rows.dig(0, 0)
       end
@@ -152,7 +152,7 @@ module NodeDB
         return unless resp.error?
 
         raise NodeDB::QueryError,
-              [resp.error_code, resp.error_message].compact.join(": ")
+          [resp.error_code, resp.error_message].compact.join(": ")
       end
     end
   end

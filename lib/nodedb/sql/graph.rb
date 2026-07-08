@@ -12,7 +12,7 @@ module NodeDB
 
       # direction: :both | :inbound | :outbound
       def self.traverse(from:, depth:, direction: :both)
-        dir_clause = direction.to_sym == :both ? "" : " DIRECTION #{direction.to_s.upcase}"
+        dir_clause = (direction.to_sym == :both) ? "" : " DIRECTION #{direction.to_s.upcase}"
         "GRAPH TRAVERSE FROM #{from} DEPTH #{depth.to_i}#{dir_clause}"
       end
 
@@ -50,7 +50,7 @@ module NodeDB
       def self.stats(collection: nil, verbose: false, as_of: nil)
         sql = +"SHOW GRAPH STATS"
         sql << " #{collection}" if collection
-        sql << " VERBOSE"        if verbose
+        sql << " VERBOSE" if verbose
         sql << " AS OF SYSTEM TIME #{as_of.to_i}" if as_of
         sql
       end
@@ -58,7 +58,7 @@ module NodeDB
       def self.render_algo_value(value)
         case value
         when Hash, Array then JSON.generate(value)
-        else                  value.to_s
+        else value.to_s
         end
       end
       private_class_method :render_algo_value
