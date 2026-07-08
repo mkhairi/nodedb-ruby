@@ -28,8 +28,11 @@ module NodeDB
         "GRAPH ALGO #{algo.to_s.upcase} ON #{table} #{opts_clause}".strip
       end
 
-      def self.delete_edge(from:, to:, type:)
-        "GRAPH DELETE EDGE FROM #{from} TO #{to} TYPE #{type}"
+      # in_collection: quoted collection name (required — current upstream
+      # rejects the IN-less form with a parse error, same syntax change
+      # that hit insert_edge)
+      def self.delete_edge(from:, to:, type:, in_collection:)
+        "GRAPH DELETE EDGE IN #{in_collection} FROM #{from} TO #{to} TYPE #{type}"
       end
 
       # SHOW GRAPH STATS [<collection>] [VERBOSE] [AS OF SYSTEM TIME <ms>]
