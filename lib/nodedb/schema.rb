@@ -17,7 +17,14 @@ module NodeDB
     Column = Data.define(:name, :type, :pg_type, :oid, :nullable, :primary_key)
 
     def self.columns(conn, collection, internal: false)
-      rows = query(conn, SQL::Collection.describe(collection.to_s))
+      normalize(query(conn, SQL::Collection.describe(collection.to_s)), internal: internal)
+    end
+
+    # Pure normalization of raw DESCRIBE rows
+    # ({"field" =>, "type" =>, "nullable" =>} hashes) into Column
+    # records — for adapters that fetch DESCRIBE through their own
+    # connection machinery.
+    def self.normalize(rows, internal: false)
       rows = rows.reject { |r| r["field"].to_s.start_with?("__") } unless internal
 
       rows.group_by { |r| r["field"].to_s }.map do |field, dups|

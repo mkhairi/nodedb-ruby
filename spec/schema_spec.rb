@@ -58,6 +58,21 @@ RSpec.describe NodeDB::Schema do
     end
   end
 
+  describe ".normalize" do
+    it "normalizes raw DESCRIBE hashes without a connection" do
+      cols = described_class.normalize([
+        { "field" => "id", "type" => "TEXT", "nullable" => "false" },
+        { "field" => "id", "type" => "TEXT PRIMARY KEY", "nullable" => "true" },
+        { "field" => "n", "type" => "INTEGER", "nullable" => "true" },
+        { "field" => "__storage", "type" => "document_strict", "nullable" => "false" }
+      ])
+
+      expect(cols.map(&:name)).to eq(%w[id n])
+      expect(cols.first.primary_key).to be(true)
+      expect(cols.last.pg_type).to eq("integer")
+    end
+  end
+
   describe ".collections" do
     it "lists collection names" do
       expect(described_class.collections(conn)).to include(name)
