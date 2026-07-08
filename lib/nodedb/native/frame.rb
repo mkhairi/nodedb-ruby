@@ -6,8 +6,8 @@ module NodeDB
     # it is a 4-byte big-endian length prefix followed by a MessagePack
     # payload. Mirrors nodedb-client/src/native/connection/mod.rs.
     module Frame
-      HELLO_MAGIC       = 0x4E44_4248 # "NDBH"
-      HELLO_ACK_MAGIC   = 0x4E44_4241 # "NDBA"
+      HELLO_MAGIC = 0x4E44_4248 # "NDBH"
+      HELLO_ACK_MAGIC = 0x4E44_4241 # "NDBA"
       HELLO_ERROR_MAGIC = 0x4E44_4245 # "NDBE"
 
       PROTO_MIN = 1
@@ -18,7 +18,7 @@ module NodeDB
       CLIENT_CAPABILITIES = 0x7F
 
       FRAME_HEADER_LEN = 4
-      MAX_FRAME_SIZE   = 16 * 1024 * 1024
+      MAX_FRAME_SIZE = 16 * 1024 * 1024
 
       HELLO_ERROR_CODES = {
         0 => "BadMagic",
@@ -26,7 +26,7 @@ module NodeDB
         2 => "Malformed"
       }.freeze
 
-      Ack = Struct.new(:proto_version, :capabilities, :server_version, :limits, keyword_init: true)
+      Ack = Struct.new(:proto_version, :capabilities, :server_version, :limits)
 
       module_function
 
@@ -57,7 +57,7 @@ module NodeDB
           raise NodeDB::ConnectionError, "native handshake rejected (#{label}): #{message}"
         else
           raise NodeDB::ConnectionError,
-                format("native handshake failed: unexpected magic 0x%08X", magic)
+            format("native handshake failed: unexpected magic 0x%08X", magic)
         end
       end
 
@@ -98,9 +98,9 @@ module NodeDB
         server_version = sv_len.zero? ? "" : read_exactly(io, sv_len).force_encoding("UTF-8")
 
         limits = {}
-        if (flag = read_exactly(io, 1).unpack1("C")) == 1
+        if read_exactly(io, 1).unpack1("C") == 1
           %i[max_vector_dim max_top_k max_scan_limit max_batch_size
-             max_crdt_delta_bytes max_query_text_bytes max_graph_depth].each do |name|
+            max_crdt_delta_bytes max_query_text_bytes max_graph_depth].each do |name|
             present, value = read_exactly(io, 5).unpack("CN")
             limits[name] = value if present == 1
           end

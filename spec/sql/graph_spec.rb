@@ -24,7 +24,7 @@ RSpec.describe NodeDB::SQL::Graph do
         table: "'users'",
         algo: :pagerank,
         damping: 0.85,
-        personalization: { "alice" => 1.0, "bob" => 0.5 }
+        personalization: {"alice" => 1.0, "bob" => 0.5}
       )
 
       expect(sql).to eq(

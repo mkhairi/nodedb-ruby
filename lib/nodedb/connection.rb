@@ -15,15 +15,15 @@ module NodeDB
   #   conn = NodeDB::Connection.connect(dbname: "mydb", user: "nodedb",
   #                                     password: "secret", protocol: :native)
   class Connection
-    DEFAULT_PORT        = 6432
+    DEFAULT_PORT = 6432
     DEFAULT_NATIVE_PORT = 6433
 
-    def self.connect(host: "localhost", port: nil, dbname:, user:, password: nil,
-                      protocol: :pg, **opts)
+    def self.connect(dbname:, user:, host: "localhost", port: nil, password: nil,
+      protocol: :pg, **opts)
       case protocol
       when :pg
         PG.connect(host: host, port: port || DEFAULT_PORT,
-                   dbname: dbname, user: user, password: password, **opts)
+          dbname: dbname, user: user, password: password, **opts)
       when :native
         NodeDB::Native::Connection.connect(
           host: host, port: port || DEFAULT_NATIVE_PORT,
@@ -31,7 +31,7 @@ module NodeDB
         )
       else
         raise ArgumentError,
-              "unknown protocol #{protocol.inspect} (expected :pg or :native)"
+          "unknown protocol #{protocol.inspect} (expected :pg or :native)"
       end
     end
   end

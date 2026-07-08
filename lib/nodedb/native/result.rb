@@ -22,9 +22,9 @@ module NodeDB
       def values = @rows
 
       def ntuples = @rows.length
-      alias count ntuples
-      alias size ntuples
-      alias length ntuples
+      alias_method :count, :ntuples
+      alias_method :size, :ntuples
+      alias_method :length, :ntuples
 
       def cmd_tuples = @rows_affected
 

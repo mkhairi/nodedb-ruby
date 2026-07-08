@@ -9,7 +9,7 @@ RSpec.describe NodeDB::Native::Connection, :integration do
   # One login for the whole group: NodeDB throttles repeated auth attempts,
   # so opening a fresh connection per example trips the lockout.
   before(:context) { @conn = self.class.open_conn }
-  after(:context)  { @conn&.close }
+  after(:context) { @conn&.close }
 
   let(:conn) { @conn }
 
@@ -42,7 +42,11 @@ RSpec.describe NodeDB::Native::Connection, :integration do
     # response-shaping rework; BUG-018 resolved).
     expect(result.first["name"]).to eq("ada")
   ensure
-    conn.run(NodeDB::SQL::Collection.drop_if_exists(coll)) rescue nil
+    begin
+      conn.run(NodeDB::SQL::Collection.drop_if_exists(coll))
+    rescue
+      nil
+    end
   end
 
   it "supports begin / commit / rollback" do

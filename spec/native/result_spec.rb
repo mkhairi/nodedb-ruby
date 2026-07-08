@@ -26,14 +26,14 @@ RSpec.describe NodeDB::Native::Result do
 
   it "yields column=>value hashes via #each (PG::Result-shaped)" do
     expect(result.map { |r| r }).to eq(
-      [{ "id" => 1, "name" => "ada" }, { "id" => 2, "name" => "lin" }]
+      [{"id" => 1, "name" => "ada"}, {"id" => 2, "name" => "lin"}]
     )
   end
 
   it "is Enumerable and supports #to_a / #first / #[]" do
     expect(result).to be_a(Enumerable)
-    expect(result.first).to eq({ "id" => 1, "name" => "ada" })
-    expect(result[1]).to eq({ "id" => 2, "name" => "lin" })
+    expect(result.first).to eq({"id" => 1, "name" => "ada"})
+    expect(result[1]).to eq({"id" => 2, "name" => "lin"})
     expect(result.to_a.size).to eq(2)
   end
 

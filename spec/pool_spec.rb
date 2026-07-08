@@ -4,7 +4,7 @@ RSpec.describe NodeDB::Pool do
   def nodedb_pg_up?
     require "socket"
     Socket.tcp(NODEDB_NATIVE_HOST, 6432, connect_timeout: 1) { true }
-  rescue StandardError
+  rescue
     false
   end
 
@@ -45,7 +45,7 @@ RSpec.describe NodeDB::Pool do
 
   it "connects lazily — construction succeeds without a reachable daemon" do
     bad = described_class.new(size: 1, timeout: 1,
-                              host: "localhost", port: 1, dbname: "x", user: "x")
+      host: "localhost", port: 1, dbname: "x", user: "x")
     expect { bad.with { |c| c } }.to raise_error(PG::Error)
   end
 end

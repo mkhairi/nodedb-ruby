@@ -20,10 +20,10 @@ RSpec.describe NodeDB::Native::Protocol do
       bytes = described_class.encode_request(
         op: described_class::OP_SQL,
         seq: 7,
-        fields: { described_class::FID_SQL => "SELECT 1" }
+        fields: {described_class::FID_SQL => "SELECT 1"}
       )
       decoded = MessagePack.unpack(bytes)
-      expect(decoded).to eq([0x20, 7, [0x01, { 2 => "SELECT 1" }]])
+      expect(decoded).to eq([0x20, 7, [0x01, {2 => "SELECT 1"}]])
     end
 
     it "emits an empty fields map when no fields are given" do
@@ -46,8 +46,8 @@ RSpec.describe NodeDB::Native::Protocol do
     it "recurses into Array and Object values" do
       arr = [6, [[2, 1], [4, "x"]]]
       expect(described_class.decode_value(arr)).to eq([1, "x"])
-      obj = [7, { "k" => [2, 9] }]
-      expect(described_class.decode_value(obj)).to eq({ "k" => 9 })
+      obj = [7, {"k" => [2, 9]}]
+      expect(described_class.decode_value(obj)).to eq({"k" => 9})
     end
 
     it "decodes a Vector tag into an array of f32 floats" do
@@ -62,10 +62,10 @@ RSpec.describe NodeDB::Native::Protocol do
   describe ".decode_response" do
     it "symbolizes a NativeResponse map and decodes rows of Values" do
       payload = MessagePack.pack(
-        "seq"           => 3,
-        "status"        => 0,
-        "columns"       => %w[id name],
-        "rows"          => [[[2, 1], [4, "ada"]], [[2, 2], [0]]],
+        "seq" => 3,
+        "status" => 0,
+        "columns" => %w[id name],
+        "rows" => [[[2, 1], [4, "ada"]], [[2, 2], [0]]],
         "rows_affected" => 0,
         "watermark_lsn" => 11
       )
@@ -78,9 +78,9 @@ RSpec.describe NodeDB::Native::Protocol do
 
     it "exposes error code and message" do
       payload = MessagePack.pack(
-        "seq"    => 1,
+        "seq" => 1,
         "status" => 2,
-        "error"  => { "code" => "42P01", "message" => "undefined table" }
+        "error" => {"code" => "42P01", "message" => "undefined table"}
       )
       resp = described_class.decode_response(payload)
       expect(resp.status).to eq(2)
