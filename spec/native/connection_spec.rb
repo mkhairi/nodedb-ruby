@@ -73,4 +73,15 @@ RSpec.describe NodeDB::Native::Connection, :integration do
     c.close
     expect(c.closed?).to be(true)
   end
+
+  it "supports a read_timeout without breaking normal queries" do
+    c = NodeDB::Native::Connection.connect(
+      host: NODEDB_NATIVE_HOST, port: NODEDB_NATIVE_PORT,
+      database: NODEDB_DATABASE, username: NODEDB_USER, password: NODEDB_PASSWORD,
+      read_timeout: 5
+    )
+    expect(c.run("SELECT 1 AS one").first["one"].to_s).to eq("1")
+  ensure
+    c&.close
+  end
 end
