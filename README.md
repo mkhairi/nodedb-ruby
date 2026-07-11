@@ -2,7 +2,7 @@
 
 > ## ⚠️ ALPHA — DO NOT USE IN PRODUCTION
 >
-> Version: **`0.1.0.alpha.5`**. Tracks NodeDB **v0.3.0** (commit `25040fdf`, 2026-06-07).
+> Version: **`0.1.0.alpha.9`**. Tracks NodeDB **v0.3.0** (commit `25040fdf`, 2026-06-07).
 >
 > This gem is **experimental and unaudited**. It has **never been used or tested
 > in any production environment**. APIs, SQL builders, and connection semantics
@@ -27,7 +27,7 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | ---- | ---- |
 | [`mkhairi/nodedb-ruby`](https://github.com/mkhairi/nodedb-ruby) | **this gem** — framework-agnostic core |
 | [`mkhairi/activerecord-nodedb-adapter`](https://github.com/mkhairi/activerecord-nodedb-adapter) | Rails ActiveRecord adapter built on this gem |
-| [`mkhairi/sequel-nodedb-adapter`](https://github.com/mkhairi/sequel-nodedb-adapter) | Sequel adapter (stub) |
+| [`mkhairi/sequel-nodedb-adapter`](https://github.com/mkhairi/sequel-nodedb-adapter) | Sequel adapter (experimental — Dataset CRUD + model plugins) |
 | [`mkhairi/nodedb-on-rails`](https://github.com/mkhairi/nodedb-on-rails) | Rails 8 sample app exercising every NodeDB engine |
 
 ## Status
@@ -37,8 +37,8 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working — `:pg` (pg gem, simple-query mode, 6432) and `:native` (MessagePack binary protocol, 6433, no libpq) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL — transport-agnostic (work over `:pg` and `:native`) |
-| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-04 against `67c4572d` — see *Known issues*) |
-| Test suite       | own suite: 53 examples; also exercised via `activerecord-nodedb-adapter` (69/0 against `67c4572d`) |
+| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-04 against `f8a4df44` — see *Known issues*) |
+| Test suite       | own suite: 69 examples, 0 failures; also exercised via `activerecord-nodedb-adapter`'s suite (see that repo's Known issues for current status) |
 
 ## Requirements
 
@@ -48,7 +48,7 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 - A running NodeDB instance — `pgwire` on `localhost:6432` for `:pg`,
   and/or the native protocol on `localhost:6433` for `:native`
   (`:pg` remains the primary transport — see *Known issues*).
-  **Latest upstream `main` recommended** (verified against `67c4572d`:
+  **Latest upstream `main` recommended** (verified against `f8a4df44`:
   native result-shape parity, scoped graph stats, spatial geometry
   constructors, `version()` / `current_setting()` probes). Note:
   post-June builds changed the on-disk format — old data directories
