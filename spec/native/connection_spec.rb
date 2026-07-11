@@ -17,6 +17,10 @@ RSpec.describe NodeDB::Native::Connection, :integration do
     expect(conn.server_version).to match(/NodeDB/i)
   end
 
+  it "exposes the connect parameters for reconnection" do
+    expect(conn.connection_parameters).to include(database: NODEDB_DATABASE, username: NODEDB_USER)
+  end
+
   it "runs a scalar SELECT and returns a PG-shaped Result" do
     result = conn.run("SELECT 1 AS one")
     expect(result).to be_a(NodeDB::Native::Result)
