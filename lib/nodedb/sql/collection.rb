@@ -57,13 +57,20 @@ module NodeDB
         "DESCRIBE #{name}"
       end
 
+      OPTION_KEY_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/
+
       def self.build_with_clause(engine, opts)
         effective = effective_engine(engine)
         return nil if effective.nil? && opts.empty?
 
         pairs = []
         pairs << "engine='#{effective}'" if effective
-        opts.each { |k, v| pairs << "#{k}='#{v}'" }
+        opts.each do |k, v|
+          unless OPTION_KEY_RE.match?(k.to_s)
+            raise ArgumentError, "invalid engine option key: #{k.inspect}"
+          end
+          pairs << "#{k}='#{v.to_s.gsub("'", "''")}'"
+        end
         "WITH (#{pairs.join(", ")})"
       end
       private_class_method :build_with_clause
