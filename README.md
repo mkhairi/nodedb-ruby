@@ -204,8 +204,9 @@ NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
 
 # flags: free-standing column-list modifiers (NodeDB v0.3.0+).
 # Accepts :bitemporal / :append_only / :hash_chain. BITEMPORAL
-# collections get the ENGINE = suffix spelling — the WITH form builds
-# a broken bitemporal schema upstream (BUG-027).
+# collections get the ENGINE = suffix spelling (the WITH form built a
+# broken bitemporal schema for most of the alpha — BUG-027, since
+# fixed upstream; the suffix spelling works on every build).
 NodeDB::SQL::Collection.create("orders", engine: :document_strict,
   columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
   flags:   [:bitemporal])
@@ -263,8 +264,8 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 NodeDB-side quirks the SQL builders work around, tracking the
 **latest upstream only** (resolved issues are pruned; git history and
-the CHANGELOG keep the record). Last retested: **2026-07-04** against
-upstream `main` at `f8a4df44` (post-v0.3.0). The canonical per-bug
+the CHANGELOG keep the record). Last retested: **2026-07-20** against
+upstream `main` at `eea86b279` (v0.4.0 final). The canonical per-bug
 records (reproductions, workaround history, retests) live in the
 [AR adapter issue tracker][ar-bugs] — titles prefixed
 `[upstream:NodeDB] BUG-NNN`; the user-facing summary is
@@ -275,35 +276,31 @@ records (reproductions, workaround history, retests) live in the
 
 ### Affecting this gem's surface
 
-- **BUG-025 — table-qualified WHERE refs silently match zero rows**
-  (except TEXT-PK equality). All builders emit unqualified columns;
-  raw-SQL callers must do the same (the AR adapter rewrites
-  AR-generated SQL automatically).
-- **BUG-027 — engine spellings diverge upstream.** `Collection.create`
-  picks per flag: `ENGINE =` suffix for BITEMPORAL, `WITH (engine=...)`
-  otherwise. Don't hand-write the other combination.
-- **Bitemporal write caveats** — INSERT/DELETE committed inside
-  explicit transactions are lost on bitemporal collections (BUG-024);
-  write autocommit. DROP + CREATE of a bitemporal collection
-  resurrects the old version history (BUG-028). A user column named
-  `bitemporal_id` triggers the same txn loss on plain collections
-  (BUG-026).
-- **Graph scoping** — `MATCH ... IN <collection>` ignores the
-  collection scope upstream (BUG-023); no MATCH builder ships until it
-  works. Graph builders take bare collection names (quoted identifiers
-  create edge-store keys that scoped stats lookups miss).
-- **BUG-003** — libpq's `PQserverVersion()` still raises
-  (`server_version` ParameterStatus is not numeric-parseable). Query
-  `current_setting('server_version_num')` instead — it returns a real
-  value on current upstream.
-- **BUG-030 — GROUP BY output drops group-key column aliases** and
-  returns empty cells for unaliased aggregates (regression on
-  `67c4572d`). Alias aggregates; read group keys by base column name
-  (the AR adapter re-aliases automatically).
-- **`:native` transport** — at result-shape parity with pgwire since
-  the upstream response-shaping rework fixed BUG-018, but `:pg`
-  (pgwire) remains the primary transport; the plan is still to adopt
-  the official NodeDB SDK after an official release.
+- **BUG-047 — every `Graph.insert_edge` double-counts.** One edge
+  insert registers 2 edges (and duplicate endpoint nodes) in
+  `Graph.stats` and the per-label breakdown — treat graph stats
+  counters as unreliable.
+- **BUG-050 — a graph edge insert wedges the daemon's next restart.**
+  After any `GRAPH INSERT EDGE`, the next daemon restart hits a
+  descriptor version anomaly for that collection and all DDL times out
+  permanently (data-directory rebuild required). Avoid graph writes on
+  data directories you intend to keep.
+- **BUG-045 — grouped-aggregate labeling is cached per session.**
+  Re-running the same grouped aggregate with different select-list
+  aliasing returns empty aggregate cells. Keep one labeling per
+  session, or reconnect.
+- **Graph builder conventions** — graph builders take bare collection
+  names (quoted identifiers create edge-store keys that scoped stats
+  lookups miss); scoped `Graph.stats` needs the single-quoted literal
+  form. No MATCH builder ships yet (its collection scoping was broken
+  upstream for most of the alpha — BUG-023, since fixed; builder still
+  pending).
+- **`:native` transport — do not use for transactional writes.** A row
+  committed inside BEGIN/COMMIT over `:native` is invisible to PK
+  point lookups and filtered `count(*)` (BUG-048; scans see it).
+  Result shapes reached pgwire parity long ago (BUG-018), but `:pg`
+  remains the primary transport; the plan is still to adopt the
+  official NodeDB SDK after an official release.
 
 ### Builder-level quirks (upstream conventions, no fix expected)
 
