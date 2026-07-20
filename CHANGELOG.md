@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.10] — 2026-07-20
+
+Tracks NodeDB upstream v0.4.0 final at `eea86b279`.
+
+### Added
+
+- `Native::Connection#connection_parameters` — exposes the connect
+  params (host, port, database, username, password, connect_timeout)
+  so downstream adapters can implement `reset`-style reconnects.
+
+### Fixed
+
+- `SQL` WITH-clause option values escape embedded quotes; option keys
+  are validated.
+- `TypeMap.resolve` falls back to text on a nil/empty type name
+  instead of raising.
+
+### Tooling
+
+- Gemspec ships `LICENSE.md`, uniform metadata, `rubygems_mfa_required`.
+- CI matrix adds Ruby 4.0.
+- Daemon-independent unit specs for SQL builders, TypeMap, and Pool.
+
 ## [0.1.0.alpha.9] — 2026-07-08
 
 Tracks NodeDB upstream `main` at `8e84501a`.
