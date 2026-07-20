@@ -43,16 +43,16 @@ module NodeDB
 
       # Read the server's handshake reply. Returns an Ack on success;
       # raises NodeDB::ConnectionError on an NDBE frame or bad magic.
-      def read_handshake_ack(io)
-        magic = read_exactly(io, 4).unpack1("N")
+      def read_handshake_ack(io, deadline: nil)
+        magic = read_exactly(io, 4, deadline: deadline).unpack1("N")
 
         case magic
         when HELLO_ACK_MAGIC
-          decode_ack(io)
+          decode_ack(io, deadline: deadline)
         when HELLO_ERROR_MAGIC
-          code = read_exactly(io, 1).unpack1("C")
-          msg_len = read_exactly(io, 1).unpack1("C")
-          message = msg_len.zero? ? "" : read_exactly(io, msg_len)
+          code = read_exactly(io, 1, deadline: deadline).unpack1("C")
+          msg_len = read_exactly(io, 1, deadline: deadline).unpack1("C")
+          message = msg_len.zero? ? "" : read_exactly(io, msg_len, deadline: deadline)
           label = HELLO_ERROR_CODES.fetch(code, "Unknown(#{code})")
           raise NodeDB::ConnectionError, "native handshake rejected (#{label}): #{message}"
         else
@@ -69,20 +69,44 @@ module NodeDB
       end
 
       # Read one length-prefixed frame payload.
-      def read_frame(io)
-        len = read_exactly(io, FRAME_HEADER_LEN).unpack1("N")
+      def read_frame(io, deadline: nil)
+        len = read_exactly(io, FRAME_HEADER_LEN, deadline: deadline).unpack1("N")
         if len > MAX_FRAME_SIZE
           raise NodeDB::ConnectionError, "native response frame too large: #{len} bytes"
         end
 
-        len.zero? ? "".b : read_exactly(io, len)
+        len.zero? ? "".b : read_exactly(io, len, deadline: deadline)
       end
 
       # Read exactly n bytes or raise (sockets may short-read).
-      def read_exactly(io, n)
+      #
+      # With no deadline, behaves exactly as before: a blocking io.read loop.
+      # With a deadline, uses io.wait_readable + read_nonblock so we can bail
+      # out with NodeDB::TimeoutError instead of blocking forever.
+      def read_exactly(io, n, deadline: nil)
         buf = +"".b
+        if deadline.nil?
+          while buf.bytesize < n
+            chunk = io.read(n - buf.bytesize)
+            raise NodeDB::ConnectionError, "native connection closed mid-frame" if chunk.nil? || chunk.empty?
+
+            buf << chunk
+          end
+          return buf
+        end
+
         while buf.bytesize < n
-          chunk = io.read(n - buf.bytesize)
+          remaining = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          raise NodeDB::TimeoutError, "native read timed out" if remaining <= 0
+          raise NodeDB::TimeoutError, "native read timed out" unless io.wait_readable(remaining)
+
+          chunk = begin
+            io.read_nonblock(n - buf.bytesize, exception: false)
+          rescue IOError, Errno::ECONNRESET
+            nil
+          end
+          next if chunk == :wait_readable
+
           raise NodeDB::ConnectionError, "native connection closed mid-frame" if chunk.nil? || chunk.empty?
 
           buf << chunk
@@ -90,18 +114,18 @@ module NodeDB
         buf
       end
 
-      def decode_ack(io)
-        proto_version = read_exactly(io, 2).unpack1("n")
-        caps_hi, caps_lo = read_exactly(io, 8).unpack("NN")
+      def decode_ack(io, deadline: nil)
+        proto_version = read_exactly(io, 2, deadline: deadline).unpack1("n")
+        caps_hi, caps_lo = read_exactly(io, 8, deadline: deadline).unpack("NN")
         capabilities = (caps_hi << 32) | caps_lo
-        sv_len = read_exactly(io, 1).unpack1("C")
-        server_version = sv_len.zero? ? "" : read_exactly(io, sv_len).force_encoding("UTF-8")
+        sv_len = read_exactly(io, 1, deadline: deadline).unpack1("C")
+        server_version = sv_len.zero? ? "" : read_exactly(io, sv_len, deadline: deadline).force_encoding("UTF-8")
 
         limits = {}
-        if read_exactly(io, 1).unpack1("C") == 1
+        if read_exactly(io, 1, deadline: deadline).unpack1("C") == 1
           %i[max_vector_dim max_top_k max_scan_limit max_batch_size
             max_crdt_delta_bytes max_query_text_bytes max_graph_depth].each do |name|
-            present, value = read_exactly(io, 5).unpack("CN")
+            present, value = read_exactly(io, 5, deadline: deadline).unpack("CN")
             limits[name] = value if present == 1
           end
         end

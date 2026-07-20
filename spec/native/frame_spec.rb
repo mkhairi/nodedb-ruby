@@ -1,4 +1,5 @@
 require "stringio"
+require "socket"
 
 RSpec.describe NodeDB::Native::Frame do
   describe ".hello_payload" do
@@ -85,6 +86,41 @@ RSpec.describe NodeDB::Native::Frame do
       io = StringIO.new([NodeDB::Native::Frame::MAX_FRAME_SIZE + 1].pack("N"))
       expect { described_class.read_frame(io) }
         .to raise_error(NodeDB::ConnectionError, /too large/)
+    end
+  end
+
+  describe ".read_exactly with a deadline" do
+    around do |example|
+      reader, writer = UNIXSocket.pair
+      @reader = reader
+      @writer = writer
+      example.run
+    ensure
+      reader.close unless reader.closed?
+      writer.close unless writer.closed?
+    end
+
+    it "raises NodeDB::TimeoutError when the deadline is already in the past" do
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) - 1
+      expect { described_class.read_exactly(@reader, 4, deadline: deadline) }
+        .to raise_error(NodeDB::TimeoutError)
+    end
+
+    it "raises NodeDB::TimeoutError when nothing arrives before the deadline" do
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 0.2
+      expect { described_class.read_exactly(@reader, 4, deadline: deadline) }
+        .to raise_error(NodeDB::TimeoutError)
+    end
+
+    it "returns the bytes when data arrives before the deadline" do
+      @writer.write("abcd".b)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2
+      expect(described_class.read_exactly(@reader, 4, deadline: deadline)).to eq("abcd".b)
+    end
+
+    it "behaves like the no-deadline path when deadline is nil" do
+      @writer.write("abcd".b)
+      expect(described_class.read_exactly(@reader, 4, deadline: nil)).to eq("abcd".b)
     end
   end
 end
