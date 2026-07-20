@@ -34,7 +34,7 @@ module NodeDB
     # Strips precision/scale (e.g. "VARCHAR(255)" → "VARCHAR") before lookup.
     # Falls back to ["text", 25] for unknown types.
     def self.resolve(nodedb_type)
-      base = nodedb_type.to_s.upcase.split("(").first.strip
+      base = nodedb_type.to_s.upcase.split("(").first.to_s.strip
       MAP[base] || ["text", 25]
     end
   end
