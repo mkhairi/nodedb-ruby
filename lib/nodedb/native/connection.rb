@@ -11,7 +11,7 @@ module NodeDB
     class Connection
       DEFAULT_PORT = 6433
 
-      attr_reader :server_version, :capabilities, :limits
+      attr_reader :server_version, :capabilities, :limits, :connection_parameters
 
       def self.connect(database:, username:, host: "localhost", port: DEFAULT_PORT,
         password: nil, connect_timeout: nil, **_ignored)
@@ -20,6 +20,10 @@ module NodeDB
       end
 
       def initialize(host:, port:, database:, username:, password:, connect_timeout: nil)
+        @connection_parameters = {
+          host: host, port: port, database: database,
+          username: username, password: password, connect_timeout: connect_timeout
+        }
         @seq = 0
         @socket =
           if connect_timeout
