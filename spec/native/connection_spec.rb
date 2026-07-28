@@ -42,8 +42,7 @@ RSpec.describe NodeDB::Native::Connection, :integration do
     conn.run(NodeDB::SQL::Collection.create(coll, columns: ["id TEXT PRIMARY KEY", "name TEXT"]))
     expect(conn.run("INSERT INTO #{coll} (id, name) VALUES ('1', 'ada')").cmd_tuples).to eq(1)
     result = conn.run("SELECT * FROM #{coll}")
-    # Native projects the declared columns, same as pgwire (upstream
-    # response-shaping rework; BUG-018 resolved).
+    # Native projects the declared columns, same as pgwire.
     expect(result.first["name"]).to eq("ada")
   ensure
     begin
