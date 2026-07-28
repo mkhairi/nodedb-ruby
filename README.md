@@ -204,9 +204,8 @@ NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
 
 # flags: free-standing column-list modifiers (NodeDB v0.3.0+).
 # Accepts :bitemporal / :append_only / :hash_chain. BITEMPORAL
-# collections get the ENGINE = suffix spelling (the WITH form built a
-# broken bitemporal schema for most of the alpha — BUG-027, since
-# fixed upstream; the suffix spelling works on every build).
+# collections get the ENGINE = suffix spelling, which works on every
+# build (the WITH form built a broken bitemporal schema on older ones).
 NodeDB::SQL::Collection.create("orders", engine: :document_strict,
   columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
   flags:   [:bitemporal])
@@ -264,9 +263,9 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 NodeDB-side quirks the SQL builders work around, tracking the
 **latest upstream only** (resolved issues are pruned; git history and
-the CHANGELOG keep the record). Last retested: **2026-07-20** against
-upstream `main` at `eea86b279` (v0.4.0 final). The canonical per-bug
-records (reproductions, workaround history, retests) live in the
+the CHANGELOG keep the record). Last retested: **2026-07-28** against
+upstream `main` at `87053aa7b`. The canonical per-bug records
+(reproductions, workaround history, retests) live in the
 [AR adapter issue tracker][ar-bugs] — titles prefixed
 `[upstream:NodeDB] BUG-NNN`; the user-facing summary is
 [KNOWN_ISSUES.md][ar-known].
@@ -276,36 +275,33 @@ records (reproductions, workaround history, retests) live in the
 
 ### Affecting this gem's surface
 
-- **BUG-047 — every `Graph.insert_edge` double-counts.** One edge
-  insert registers 2 edges (and duplicate endpoint nodes) in
-  `Graph.stats` and the per-label breakdown — treat graph stats
-  counters as unreliable.
-- **BUG-050 — a graph edge insert wedges the daemon's next restart.**
-  After any `GRAPH INSERT EDGE`, the next daemon restart hits a
-  descriptor version anomaly for that collection and all DDL times out
-  permanently (data-directory rebuild required). Avoid graph writes on
-  data directories you intend to keep.
-- **BUG-045 — grouped-aggregate labeling is cached per session.**
-  Re-running the same grouped aggregate with different select-list
-  aliasing returns empty aggregate cells. Keep one labeling per
-  session, or reconnect.
+- **BUG-062 — the first row written to a timeseries collection loses
+  every non-TIME_KEY column.** `Collection.create(engine: :timeseries)`
+  emits an explicit column list, which is the shape that triggers it:
+  the first insert keeps only its TIME_KEY value, later inserts are
+  stored correctly, and nothing reports the loss.
+- **BUG-063 — the TIME_KEY column name is authoritative.** Upstream no
+  longer renames it to `timestamp` on projection, so
+  `Timeseries.since_clause` / `until_clause` / `time_bucket` — all of
+  which filter on `timestamp` — only work against a collection whose
+  TIME_KEY is named `timestamp`. `Collection.create` declares
+  `timestamp BIGINT TIME_KEY` for exactly that reason; a collection
+  declaring another name needs its own WHERE fragments.
+- **BUG-058 — `SEARCH` does not compose in an `IN` predicate.**
+  `Vector.search` output can be wrapped in a derived table
+  (`FROM (SEARCH ...) s`), but `IN (SEARCH ...)` is rejected and
+  `IN (SELECT id FROM (SEARCH ...) s)` silently returns zero rows —
+  do not use that spelling. A hybrid query needs two round trips.
 - **Graph builder conventions** — graph builders take bare collection
   names (quoted identifiers create edge-store keys that scoped stats
   lookups miss); scoped `Graph.stats` needs the single-quoted literal
-  form. No MATCH builder ships yet (its collection scoping was broken
-  upstream for most of the alpha — BUG-023, since fixed; builder still
-  pending).
-- **`:native` transport — do not use for transactional writes.** A row
-  committed inside BEGIN/COMMIT over `:native` is invisible to PK
-  point lookups and filtered `count(*)` (BUG-048; scans see it).
-  Result shapes reached pgwire parity long ago (BUG-018), but `:pg`
-  remains the primary transport; the plan is still to adopt the
+  form. No MATCH builder ships yet.
+- **`:native` transport** — result shapes are at pgwire parity, but
+  `:pg` remains the primary transport; the plan is still to adopt the
   official NodeDB SDK after an official release.
 
 ### Builder-level quirks (upstream conventions, no fix expected)
 
-- **Quoted identifiers rejected by `SEARCH`** — `Vector.search` emits
-  bare `column` / `table` names; quoting via `"col"` returns no rows.
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements; use simple-query mode.
 
