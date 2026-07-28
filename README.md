@@ -2,7 +2,8 @@
 
 > ## ⚠️ ALPHA — DO NOT USE IN PRODUCTION
 >
-> Version: **`0.1.0.alpha.9`**. Tracks NodeDB **v0.3.0** (commit `25040fdf`, 2026-06-07).
+> Version: **`0.1.0.alpha.10`**. Requires NodeDB **0.4.0 or newer**
+> (verified against post-0.4.0 upstream `main` at `87053aa7b`).
 >
 > This gem is **experimental and unaudited**. It has **never been used or tested
 > in any production environment**. APIs, SQL builders, and connection semantics
@@ -37,7 +38,7 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 | Connection       | Working — `:pg` (pg gem, simple-query mode, 6432) and `:native` (MessagePack binary protocol, 6433, no libpq) |
 | Type map         | Working (vector, geometry, json, uuid, …) |
 | SQL builders     | Vector / Graph / Timeseries / Spatial / KV / FTS / Collection DDL — transport-agnostic (work over `:pg` and `:native`) |
-| NodeDB versions  | 0.1.x through post-v0.3.0 `main` (latest retest 2026-07-04 against `f8a4df44` — see *Known issues*) |
+| NodeDB versions  | **0.4.0+** (latest retest 2026-07-28 against `main` at `87053aa7b`) |
 | Test suite       | own suite: 69 examples, 0 failures; also exercised via `activerecord-nodedb-adapter`'s suite (see that repo's Known issues for current status) |
 
 ## Requirements
@@ -45,14 +46,14 @@ This gem is the **core** that `activerecord-nodedb-adapter` and
 - Ruby 3.2+ (tested on 4.0.1)
 - `pg` gem (libpq client) — only for the default `:pg` transport
 - `msgpack` gem — for the `:native` transport
+- **NodeDB 0.4.0 or newer.** Earlier lines are not supported: the
+  builders emit DDL and engine clauses that 0.3.x rejects, and its
+  on-disk format is incompatible (a pre-0.4 data directory makes the
+  daemon panic at boot — start fresh). Verified against post-0.4.0
+  upstream `main` at `87053aa7b`.
 - A running NodeDB instance — `pgwire` on `localhost:6432` for `:pg`,
-  and/or the native protocol on `localhost:6433` for `:native`
-  (`:pg` remains the primary transport — see *Known issues*).
-  **Latest upstream `main` recommended** (verified against `f8a4df44`:
-  native result-shape parity, scoped graph stats, spatial geometry
-  constructors, `version()` / `current_setting()` probes). Note:
-  post-June builds changed the on-disk format — old data directories
-  make the daemon panic at boot; start fresh.
+  and/or the native protocol on `localhost:6433` for `:native`. `:pg`
+  is the primary transport.
 
 ## Installation
 
@@ -261,47 +262,31 @@ NodeDB::TypeMap.cast("uuid",   "f5d297…")          # => "f5d297…"
 
 ## Known issues
 
-NodeDB-side quirks the SQL builders work around, tracking the
-**latest upstream only** (resolved issues are pruned; git history and
-the CHANGELOG keep the record). Last retested: **2026-07-28** against
-upstream `main` at `87053aa7b`. The canonical per-bug records
-(reproductions, workaround history, retests) live in the
-[AR adapter issue tracker][ar-bugs] — titles prefixed
-`[upstream:NodeDB] BUG-NNN`; the user-facing summary is
-[KNOWN_ISSUES.md][ar-known].
+NodeDB-side quirks the SQL builders work around are tracked centrally,
+not here: the user-facing rollup is the AR adapter's
+[KNOWN_ISSUES.md][ar-known], and per-bug reproductions, workaround
+history and retests live in its [issue tracker][ar-bugs].
 
 [ar-bugs]: https://github.com/mkhairi/activerecord-nodedb-adapter/issues?q=%22%5Bupstream%3ANodeDB%5D%22
 [ar-known]: https://github.com/mkhairi/activerecord-nodedb-adapter/blob/main/docs/KNOWN_ISSUES.md
 
-### Affecting this gem's surface
+### Builder conventions
 
-- **BUG-062 — the first row written to a timeseries collection loses
-  every non-TIME_KEY column.** `Collection.create(engine: :timeseries)`
-  emits an explicit column list, which is the shape that triggers it:
-  the first insert keeps only its TIME_KEY value, later inserts are
-  stored correctly, and nothing reports the loss.
-- **BUG-063 — the TIME_KEY column name is authoritative.** Upstream no
-  longer renames it to `timestamp` on projection, so
-  `Timeseries.since_clause` / `until_clause` / `time_bucket` — all of
-  which filter on `timestamp` — only work against a collection whose
-  TIME_KEY is named `timestamp`. `Collection.create` declares
-  `timestamp BIGINT TIME_KEY` for exactly that reason; a collection
-  declaring another name needs its own WHERE fragments.
-- **BUG-058 — `SEARCH` does not compose in an `IN` predicate.**
-  `Vector.search` output can be wrapped in a derived table
-  (`FROM (SEARCH ...) s`), but `IN (SEARCH ...)` is rejected and
-  `IN (SELECT id FROM (SEARCH ...) s)` silently returns zero rows —
-  do not use that spelling. A hybrid query needs two round trips.
-- **Graph builder conventions** — graph builders take bare collection
-  names (quoted identifiers create edge-store keys that scoped stats
-  lookups miss); scoped `Graph.stats` needs the single-quoted literal
-  form. No MATCH builder ships yet.
+- **Graph builders take bare collection names** — quoted identifiers
+  create edge-store keys that scoped stats lookups miss; scoped
+  `Graph.stats` needs the single-quoted literal form. No MATCH builder
+  ships yet.
+- **Timeseries builders assume a `timestamp` TIME_KEY** —
+  `Timeseries.since_clause` / `until_clause` / `time_bucket` all filter
+  on `timestamp`, which is what `Collection.create(engine: :timeseries)`
+  declares. A collection declaring another TIME_KEY name needs its own
+  WHERE fragments.
+- **`Vector.search` output does not compose into an `IN` predicate** —
+  wrap it in a derived table (`FROM (SEARCH ...) s`) or take the ids
+  and issue a second query.
 - **`:native` transport** — result shapes are at pgwire parity, but
   `:pg` remains the primary transport; the plan is still to adopt the
   official NodeDB SDK after an official release.
-
-### Builder-level quirks (upstream conventions, no fix expected)
-
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements; use simple-query mode.
 
