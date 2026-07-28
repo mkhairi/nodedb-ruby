@@ -199,7 +199,7 @@ NodeDB::SQL::Collection.create("articles", engine: :document_strict, columns: [
 # engine_options: arbitrary key/value pairs serialised into the WITH clause
 NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
   engine_options: { retention: "7d", compression: "zstd" })
-# CREATE COLLECTION metrics (ts TIMESTAMP TIME_KEY, value FLOAT)
+# CREATE COLLECTION metrics (timestamp BIGINT TIME_KEY, value FLOAT)
 # WITH (engine='timeseries', retention='7d', compression='zstd')
 
 # flags: free-standing column-list modifiers (NodeDB v0.3.0+).

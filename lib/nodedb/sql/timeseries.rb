@@ -3,7 +3,11 @@ module NodeDB
     # SQL helpers for NodeDB timeseries engine.
     module Timeseries
       # Returns a time_bucket() SQL fragment for use in SELECT.
-      # NodeDB timeseries renames the TIME_KEY column to `timestamp` internally.
+      # Assumes the TIME_KEY column is named `timestamp` — NodeDB's own default
+      # and what `Collection.create` declares. Older builds renamed any TIME_KEY
+      # column to `timestamp` on projection; current builds honour the declared
+      # name verbatim, so a collection with a differently-named TIME_KEY needs
+      # its own clauses.
       def self.time_bucket(interval, as: :bucket)
         "time_bucket('#{interval}', timestamp) AS #{as}"
       end

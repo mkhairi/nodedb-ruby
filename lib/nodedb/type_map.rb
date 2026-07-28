@@ -20,6 +20,7 @@ module NodeDB
       "BOOL" => ["boolean", 16],
       "TIMESTAMP" => ["timestamp without time zone", 1114],
       "TIMESTAMP TIME_KEY" => ["timestamp without time zone", 1114],
+      "BIGINT TIME_KEY" => ["bigint", 20],
       "TIMESTAMPTZ" => ["timestamp with time zone", 1184],
       "DATE" => ["date", 1082],
       "UUID" => ["uuid", 2950],
