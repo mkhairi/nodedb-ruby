@@ -12,6 +12,22 @@ RSpec.describe NodeDB::SQL::Graph do
     end
   end
 
+  describe ".traverse" do
+    it "renders the IN-clause form current upstream requires" do
+      sql = described_class.traverse(from: "'alice'", depth: 2, in_collection: "social")
+
+      expect(sql).to eq("GRAPH TRAVERSE IN social FROM 'alice' DEPTH 2")
+    end
+
+    it "appends DIRECTION for a one-way traversal" do
+      sql = described_class.traverse(
+        from: "'alice'", depth: 1, direction: :outbound, in_collection: "social"
+      )
+
+      expect(sql).to eq("GRAPH TRAVERSE IN social FROM 'alice' DEPTH 1 DIRECTION OUTBOUND")
+    end
+  end
+
   describe ".algo" do
     it "renders scalar options uppercased and stringified" do
       sql = described_class.algo(table: "users", algo: :pagerank, damping: 0.85, iterations: 20)

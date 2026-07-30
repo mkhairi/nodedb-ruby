@@ -11,9 +11,13 @@ module NodeDB
       end
 
       # direction: :both | :inbound | :outbound
-      def self.traverse(from:, depth:, direction: :both)
+      #
+      # in_collection: quoted collection name (required — current upstream
+      # rejects the IN-less form with a parse error, same syntax change
+      # that hit insert_edge and delete_edge)
+      def self.traverse(from:, depth:, in_collection:, direction: :both)
         dir_clause = (direction.to_sym == :both) ? "" : " DIRECTION #{direction.to_s.upcase}"
-        "GRAPH TRAVERSE FROM #{from} DEPTH #{depth.to_i}#{dir_clause}"
+        "GRAPH TRAVERSE IN #{in_collection} FROM #{from} DEPTH #{depth.to_i}#{dir_clause}"
       end
 
       # algo: :pagerank | :betweenness | :closeness | :bfs | :dfs | :scc
