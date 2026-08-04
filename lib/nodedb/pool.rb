@@ -4,7 +4,7 @@ module NodeDB
   # Thread-safe pool of NodeDB connections (either transport).
   #
   #   pool = NodeDB::Pool.new(size: 5, timeout: 5,
-  #                           dbname: "nodedb", user: "nodedb", password: "...")
+  #                           dbname: "default", user: "nodedb", password: "...")
   #   pool.with { |conn| conn.exec("SELECT 1") }
   #   pool.exec("SELECT 1")   # checkout + exec + checkin
   #   pool.shutdown

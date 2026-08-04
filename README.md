@@ -88,7 +88,7 @@ require "nodedb"
 # Default :pg transport (PostgreSQL wire via the pg gem, port 6432)
 conn = NodeDB::Connection.connect(
   host:     "localhost",
-  dbname:   "nodedb",
+  dbname:   "default",
   user:     "nodedb",
   password: ENV["NODEDB_PASSWORD"]
 )
@@ -96,7 +96,7 @@ conn.query("SELECT 1+1 AS r").first  # => {"r" => "2"}
 
 # :native transport — NodeDB binary protocol, port 6433, no libpq
 nat = NodeDB::Connection.connect(
-  dbname:   "nodedb",
+  dbname:   "default",
   user:     "nodedb",
   password: ENV["NODEDB_PASSWORD"],
   protocol: :native
@@ -113,7 +113,7 @@ gem; connections are created lazily on first checkout):
 ```ruby
 pool = NodeDB::Pool.new(
   size: 5, timeout: 5,
-  dbname: "nodedb", user: "nodedb", password: ENV["NODEDB_PASSWORD"]
+  dbname: "default", user: "nodedb", password: ENV["NODEDB_PASSWORD"]
 )
 
 pool.with { |conn| conn.exec("SELECT 1+1 AS r") }
