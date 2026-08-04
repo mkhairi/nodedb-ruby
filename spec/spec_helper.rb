@@ -2,7 +2,7 @@ require "nodedb"
 
 NODEDB_NATIVE_HOST = ENV.fetch("NODEDB_HOST", "localhost")
 NODEDB_NATIVE_PORT = Integer(ENV.fetch("NODEDB_NATIVE_PORT", "6433"))
-NODEDB_DATABASE = ENV.fetch("NODEDB_DATABASE", "nodedb")
+NODEDB_DATABASE = ENV.fetch("NODEDB_DATABASE", "default")
 NODEDB_USER = ENV.fetch("NODEDB_USER", "nodedb")
 NODEDB_PASSWORD = ENV.fetch("NODEDB_PASSWORD") do
   path = File.expand_path("~/.local/share/nodedb/.superuser_password")

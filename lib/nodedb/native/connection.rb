@@ -6,7 +6,7 @@ module NodeDB
     # (TCP, MessagePack-framed, default port 6433). No pg / libpq.
     #
     #   conn = NodeDB::Native::Connection.connect(
-    #     database: "nodedb", username: "nodedb", password: "secret")
+    #     database: "default", username: "nodedb", password: "secret")
     #   conn.run("SELECT 1").to_a
     class Connection
       DEFAULT_PORT = 6433
