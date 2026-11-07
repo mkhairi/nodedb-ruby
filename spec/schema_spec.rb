@@ -59,6 +59,26 @@ RSpec.describe NodeDB::Schema do
   end
 
   describe ".normalize" do
+    it "hides the document row of a schemaless collection" do
+      rows = [
+        {"field" => "id", "type" => "TEXT", "nullable" => "false"},
+        {"field" => "document", "type" => "JSON", "nullable" => "true"},
+        {"field" => "__storage", "type" => "document_schemaless", "nullable" => "false"}
+      ]
+
+      expect(described_class.normalize(rows).map(&:name)).to eq(["id"])
+      expect(described_class.normalize(rows, internal: true).map(&:name)).to include("document", "__storage")
+    end
+
+    it "keeps a declared document column on a strict collection" do
+      rows = [
+        {"field" => "document", "type" => "JSON", "nullable" => "true"},
+        {"field" => "__storage", "type" => "document_strict", "nullable" => "false"}
+      ]
+
+      expect(described_class.normalize(rows).map(&:name)).to eq(["document"])
+    end
+
     it "normalizes raw DESCRIBE hashes without a connection" do
       cols = described_class.normalize([
         {"field" => "id", "type" => "TEXT", "nullable" => "false"},

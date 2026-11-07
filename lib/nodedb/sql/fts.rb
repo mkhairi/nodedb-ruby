@@ -16,8 +16,7 @@ module NodeDB
         "CREATE FULLTEXT INDEX #{name} ON #{collection} (#{column})"
       end
 
-      # DROP INDEX <name>. NodeDB does not implement `DROP FULLTEXT INDEX`;
-      # the generic `DROP INDEX` removes a fulltext index too.
+      # DROP INDEX <name>. The generic form removes a fulltext index too.
       def self.drop_index(name)
         "DROP INDEX #{name}"
       end
@@ -29,9 +28,9 @@ module NodeDB
       # @param column [String] column name (unquoted identifier)
       # @param query  [String] pre-quoted search term string
       # @param limit  [Integer]
-      # @param fuzzy  [Boolean] enable fuzzy matching (distance: 2)
+      # @param fuzzy  [Boolean] enable fuzzy matching
       def self.search(table:, column:, query:, limit:, fuzzy: false)
-        fuzzy_opts = fuzzy ? ", { fuzzy: true, distance: 2 }" : ""
+        fuzzy_opts = fuzzy ? ", fuzzy => true" : ""
         "SELECT id " \
         "FROM #{table} " \
         "WHERE text_match(#{column}, #{query}#{fuzzy_opts}) " \

@@ -8,8 +8,9 @@ module NodeDB
   #
   # Normalizes the raw DESCRIBE quirks both adapters used to handle
   # separately: duplicate rows for the primary-key column (one carries
-  # "PRIMARY KEY" in the type), and `__`-prefixed internal columns
-  # (hidden unless `internal: true`).
+  # "PRIMARY KEY" in the type), and internal columns, hidden unless
+  # `internal: true`: `__`-prefixed rows and the `document JSON` row a
+  # schemaless collection reports.
   #
   # Works on either transport — pass anything that responds to
   # exec(sql) (PG::Connection) or run(sql) (Native::Connection).
@@ -25,7 +26,12 @@ module NodeDB
     # records — for adapters that fetch DESCRIBE through their own
     # connection machinery.
     def self.normalize(rows, internal: false)
-      rows = rows.reject { |r| r["field"].to_s.start_with?("__") } unless internal
+      unless internal
+        schemaless = rows.any? { |r| r["field"] == "__storage" && r["type"] == "document_schemaless" }
+        rows = rows.reject do |r|
+          r["field"].to_s.start_with?("__") || (schemaless && r["field"] == "document" && r["type"] == "JSON")
+        end
+      end
 
       rows.group_by { |r| r["field"].to_s }.map do |field, dups|
         primary = dups.any? { |r| r["type"].to_s.upcase.include?("PRIMARY KEY") }
