@@ -30,7 +30,7 @@ RSpec.describe NodeDB::SQL::FTS do
         limit: 10, fuzzy: true)
 
       expect(sql).to eq(
-        "SELECT id FROM docs WHERE text_match(body, 'hello', { fuzzy: true, distance: 2 }) LIMIT 10"
+        "SELECT id FROM docs WHERE text_match(body, 'hello', fuzzy => true) LIMIT 10"
       )
     end
 

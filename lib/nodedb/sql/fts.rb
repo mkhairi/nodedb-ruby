@@ -29,9 +29,9 @@ module NodeDB
       # @param column [String] column name (unquoted identifier)
       # @param query  [String] pre-quoted search term string
       # @param limit  [Integer]
-      # @param fuzzy  [Boolean] enable fuzzy matching (distance: 2)
+      # @param fuzzy  [Boolean] enable fuzzy matching
       def self.search(table:, column:, query:, limit:, fuzzy: false)
-        fuzzy_opts = fuzzy ? ", { fuzzy: true, distance: 2 }" : ""
+        fuzzy_opts = fuzzy ? ", fuzzy => true" : ""
         "SELECT id " \
         "FROM #{table} " \
         "WHERE text_match(#{column}, #{query}#{fuzzy_opts}) " \
