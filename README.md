@@ -200,18 +200,17 @@ NodeDB::SQL::Collection.create("articles", engine: :document_strict, columns: [
 # engine_options: arbitrary key/value pairs serialised into the WITH clause
 NodeDB::SQL::Collection.create("metrics", engine: :timeseries,
   engine_options: { retention: "7d", compression: "zstd" })
-# CREATE COLLECTION metrics (timestamp BIGINT TIME_KEY, value FLOAT)
+# CREATE COLLECTION metrics (timestamp TIMESTAMP TIME_KEY, value FLOAT)
 # WITH (engine='timeseries', retention='7d', compression='zstd')
 
-# flags: free-standing column-list modifiers (NodeDB v0.3.0+).
-# Accepts :bitemporal / :append_only / :hash_chain. BITEMPORAL
-# collections get the ENGINE = suffix spelling, which works on every
-# build (the WITH form built a broken bitemporal schema on older ones).
+# flags: boolean collection modifiers.
+# Accepts :bitemporal / :append_only / :hash_chain. They go in the WITH
+# clause, because NodeDB ignores the free-standing column-list keywords.
 NodeDB::SQL::Collection.create("orders", engine: :document_strict,
   columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
   flags:   [:bitemporal])
-# CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL)
-# ENGINE = document_strict
+# CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC)
+# WITH (engine='document_strict', bitemporal=true)
 
 # Personalized PageRank — Hash options are JSON-encoded so the
 # rendered SQL matches NodeDB v0.3.0's PERSONALIZATION clause.
@@ -281,9 +280,10 @@ history and retests live in its [issue tracker][ar-bugs].
   on `timestamp`, which is what `Collection.create(engine: :timeseries)`
   declares. A collection declaring another TIME_KEY name needs its own
   WHERE fragments.
-- **`Vector.search` output does not compose into an `IN` predicate** —
-  wrap it in a derived table (`FROM (SEARCH ...) s`) or take the ids
-  and issue a second query.
+- **Undeclared columns on a declared timeseries** —
+  `Collection.create(engine: :timeseries)` declares only `timestamp` and
+  `value`, and NodeDB rejects any other column with `42703`. Pass
+  `columns:` to declare the fields you write.
 - **`:native` transport** — result shapes are at pgwire parity, but
   `:pg` remains the primary transport; the plan is still to adopt the
   official NodeDB SDK after an official release.

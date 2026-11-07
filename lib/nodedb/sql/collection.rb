@@ -26,7 +26,7 @@ module NodeDB
 
         if col_parts.empty?
           case engine&.to_sym
-          when :timeseries then col_parts = ["timestamp BIGINT TIME_KEY", "value FLOAT"]
+          when :timeseries then col_parts = ["timestamp TIMESTAMP TIME_KEY", "value FLOAT"]
           when :kv then col_parts = ["key TEXT PRIMARY KEY", "value TEXT"]
           end
         end

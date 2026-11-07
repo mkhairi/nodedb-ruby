@@ -13,7 +13,8 @@ module NodeDB
       end
 
       # Converts a Ruby Time (or anything responding to #to_i) to Unix milliseconds.
-      # NodeDB timeseries stores and filters on epoch-ms integers.
+      # NodeDB compares a TIME_KEY against epoch-ms integers, whether the column
+      # is declared TIMESTAMP or BIGINT.
       def self.epoch_ms(time)
         time.to_i * 1000
       end

@@ -47,7 +47,7 @@ RSpec.describe NodeDB::SQL::Collection do
     it "fills timeseries defaults when columns is empty" do
       sql = described_class.create(:m, engine: :timeseries)
 
-      expect(sql).to include("(timestamp BIGINT TIME_KEY, value FLOAT)")
+      expect(sql).to include("(timestamp TIMESTAMP TIME_KEY, value FLOAT)")
       expect(sql).to include("WITH (engine='timeseries')")
     end
 
