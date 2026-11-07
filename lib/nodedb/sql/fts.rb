@@ -16,8 +16,7 @@ module NodeDB
         "CREATE FULLTEXT INDEX #{name} ON #{collection} (#{column})"
       end
 
-      # DROP INDEX <name>. NodeDB does not implement `DROP FULLTEXT INDEX`;
-      # the generic `DROP INDEX` removes a fulltext index too.
+      # DROP INDEX <name>. The generic form removes a fulltext index too.
       def self.drop_index(name)
         "DROP INDEX #{name}"
       end
