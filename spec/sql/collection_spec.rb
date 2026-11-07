@@ -20,7 +20,7 @@ RSpec.describe NodeDB::SQL::Collection do
       )
     end
 
-    it "appends a BITEMPORAL flag inside the column-list parens with the WITH clause" do
+    it "puts a bitemporal flag in the WITH clause, where NodeDB honours it" do
       sql = described_class.create(
         :orders,
         engine: :document_strict,
@@ -29,15 +29,19 @@ RSpec.describe NodeDB::SQL::Collection do
       )
 
       expect(sql).to eq(
-        "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL) " \
-        "WITH (engine='document_strict')"
+        "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC) " \
+        "WITH (engine='document_strict', bitemporal=true)"
       )
     end
 
-    it "uppercases flag symbols / strings consistently" do
-      sql = described_class.create(:c, columns: ["id TEXT"], flags: ["append_only"])
+    it "accepts flags as strings and without an engine" do
+      sql = described_class.create(:c, columns: ["id TEXT"], flags: ["APPEND_ONLY"])
 
-      expect(sql).to include("(id TEXT, APPEND_ONLY)")
+      expect(sql).to eq("CREATE COLLECTION c (id TEXT) WITH (append_only=true)")
+    end
+
+    it "rejects a flag that is not a bare identifier" do
+      expect { described_class.create(:c, flags: ["x=1); DROP"]) }.to raise_error(ArgumentError)
     end
 
     it "fills timeseries defaults when columns is empty" do

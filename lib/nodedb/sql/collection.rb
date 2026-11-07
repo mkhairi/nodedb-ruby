@@ -13,14 +13,14 @@ module NodeDB
       #     engine_options: { retention: "7d" })
       #   # => "CREATE COLLECTION metrics (...) WITH (engine='timeseries', retention='7d')"
       #
-      # `flags` is an Array of free-standing modifier keywords appended to the
-      # column-list parens. NodeDB v0.3.0 recognises `BITEMPORAL`,
-      # `APPEND_ONLY`, and `HASH_CHAIN`.
+      # `flags` is an Array of boolean collection modifiers: `:bitemporal`,
+      # `:append_only`, `:hash_chain`. They go in the WITH clause, because
+      # NodeDB accepts the free-standing column-list keywords and ignores them.
       #
       #   Collection.create(:orders, engine: :document_strict,
       #     columns: ["id TEXT PRIMARY KEY", "total NUMERIC"],
       #     flags:   [:bitemporal])
-      #   # => "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC, BITEMPORAL) WITH (engine='document_strict')"
+      #   # => "CREATE COLLECTION orders (id TEXT PRIMARY KEY, total NUMERIC) WITH (engine='document_strict', bitemporal=true)"
       def self.create(name, engine: nil, columns: [], engine_options: {}, flags: [])
         col_parts = columns.dup
 
@@ -31,12 +31,9 @@ module NodeDB
           end
         end
 
-        flag_parts = Array(flags).map { |f| f.to_s.upcase }
-        body_parts = col_parts + flag_parts
-
         sql = "CREATE COLLECTION #{name}"
-        sql << " (#{body_parts.join(", ")})" if body_parts.any?
-        with_clause = build_with_clause(engine, engine_options.to_h)
+        sql << " (#{col_parts.join(", ")})" if col_parts.any?
+        with_clause = build_with_clause(engine, engine_options.to_h, flags)
         sql << " #{with_clause}" if with_clause
         sql
       end
@@ -59,9 +56,10 @@ module NodeDB
 
       OPTION_KEY_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
-      def self.build_with_clause(engine, opts)
+      def self.build_with_clause(engine, opts, flags = [])
         effective = effective_engine(engine)
-        return nil if effective.nil? && opts.empty?
+        flags = Array(flags).map { |f| f.to_s.downcase }
+        return nil if effective.nil? && opts.empty? && flags.empty?
 
         pairs = []
         pairs << "engine='#{effective}'" if effective
@@ -70,6 +68,11 @@ module NodeDB
             raise ArgumentError, "invalid engine option key: #{k.inspect}"
           end
           pairs << "#{k}='#{v.to_s.gsub("'", "''")}'"
+        end
+        flags.each do |flag|
+          raise ArgumentError, "invalid collection flag: #{flag.inspect}" unless OPTION_KEY_RE.match?(flag)
+
+          pairs << "#{flag}=true"
         end
         "WITH (#{pairs.join(", ")})"
       end
