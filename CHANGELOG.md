@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Pre-`1.0` alpha line: APIs may change between alpha releases without
 deprecation. Bump `N` in `0.1.0.alpha.N` for any user-visible change.
 
+## [0.1.0.alpha.11] — 2026-11-07
+
+Tracks NodeDB upstream 0.7.0-dev at `4b7784861`.
+
+### Changed
+
+- `SQL::Graph.traverse` requires `in_collection:` and renders
+  `GRAPH TRAVERSE IN <coll>`, because upstream rejects the form without
+  `IN`.
+- The default timeseries column is `timestamp TIMESTAMP TIME_KEY`.
+
+### Fixed
+
+- `Collection.create` emits `flags:` as `WITH (name=true)`, because
+  upstream ignores free-standing `BITEMPORAL` and `APPEND_ONLY`. A
+  collection created with the old flag is not bitemporal and must be
+  recreated.
+- Fuzzy full-text search passes `fuzzy => true`, because upstream rejects
+  the old third argument.
+- `Schema.normalize` hides the synthetic `document JSON` row of a
+  schemaless collection.
+
 ## [0.1.0.alpha.10] — 2026-07-20
 
 Tracks NodeDB upstream v0.4.0 final at `eea86b279`.
