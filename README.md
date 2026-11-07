@@ -2,7 +2,7 @@
 
 > ## ⚠️ ALPHA — DO NOT USE IN PRODUCTION
 >
-> Version: **`0.1.0.alpha.10`**. Requires NodeDB **0.4.0 or newer**
+> Version: **`0.1.0.alpha.11`**. Requires NodeDB **0.4.0 or newer**
 > (verified against post-0.4.0 upstream `main` at `87053aa7b`).
 >
 > This gem is **experimental and unaudited**. It has **never been used or tested
