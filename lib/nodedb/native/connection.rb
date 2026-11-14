@@ -14,16 +14,18 @@ module NodeDB
       attr_reader :server_version, :capabilities, :limits, :connection_parameters
 
       def self.connect(database:, username:, host: "localhost", port: DEFAULT_PORT,
-        password: nil, connect_timeout: nil, **_ignored)
+        password: nil, connect_timeout: nil, read_timeout: nil, **_ignored)
         new(host: host, port: port, database: database, username: username,
-          password: password, connect_timeout: connect_timeout)
+          password: password, connect_timeout: connect_timeout, read_timeout: read_timeout)
       end
 
-      def initialize(host:, port:, database:, username:, password:, connect_timeout: nil)
+      def initialize(host:, port:, database:, username:, password:, connect_timeout: nil, read_timeout: nil)
         @connection_parameters = {
           host: host, port: port, database: database,
-          username: username, password: password, connect_timeout: connect_timeout
+          username: username, password: password, connect_timeout: connect_timeout,
+          read_timeout: read_timeout
         }
+        @read_timeout = read_timeout
         @seq = 0
         @socket =
           if connect_timeout
@@ -34,7 +36,8 @@ module NodeDB
         @socket.sync = true if @socket.respond_to?(:sync=)
 
         @socket.write(Frame.hello_payload)
-        ack = Frame.read_handshake_ack(@socket)
+        handshake_deadline = connect_timeout && Process.clock_gettime(Process::CLOCK_MONOTONIC) + connect_timeout
+        ack = Frame.read_handshake_ack(@socket, deadline: handshake_deadline)
         @server_version = ack.server_version
         @capabilities = ack.capabilities
         @limits = ack.limits
@@ -116,14 +119,15 @@ module NodeDB
 
       def send_op(op, fields)
         Frame.write_frame(@socket, Protocol.encode_request(op: op, seq: next_seq, fields: fields))
-        read_response
+        deadline = @read_timeout && Process.clock_gettime(Process::CLOCK_MONOTONIC) + @read_timeout
+        read_response(deadline)
       end
 
       # Collapse a Partial (streamed) response into one Response.
-      def read_response
+      def read_response(deadline = nil)
         acc = nil
         loop do
-          resp = Protocol.decode_response(Frame.read_frame(@socket))
+          resp = Protocol.decode_response(Frame.read_frame(@socket, deadline: deadline))
           if resp.partial?
             acc ? acc.rows.concat(resp.rows) : (acc = resp)
             next
