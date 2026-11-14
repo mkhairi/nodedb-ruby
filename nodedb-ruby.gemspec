@@ -26,5 +26,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "pg", "~> 1.5"
   spec.add_dependency "msgpack", "~> 1.7"
-  spec.add_dependency "connection_pool", ">= 2.4"
+  spec.add_dependency "connection_pool", ">= 2.5.4"
 end

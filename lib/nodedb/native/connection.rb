@@ -43,7 +43,11 @@ module NodeDB
         @limits = ack.limits
 
         authenticate(username, password, database)
-      rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, SocketError => e
+      rescue NodeDB::Error
+        discard_socket
+        raise
+      rescue SystemCallError, IOError, SocketError => e
+        discard_socket
         raise NodeDB::ConnectionError, "native connect failed: #{e.message}"
       end
 
@@ -118,16 +122,38 @@ module NodeDB
       end
 
       def send_op(op, fields)
-        Frame.write_frame(@socket, Protocol.encode_request(op: op, seq: next_seq, fields: fields))
+        seq = next_seq
+        clean = false
+        Frame.write_frame(@socket, Protocol.encode_request(op: op, seq: seq, fields: fields))
         deadline = @read_timeout && Process.clock_gettime(Process::CLOCK_MONOTONIC) + @read_timeout
-        read_response(deadline)
+        resp = read_response(seq, deadline)
+        clean = true
+        resp
+      rescue SystemCallError, IOError => e
+        raise NodeDB::ConnectionError, "native connection lost: #{e.message}"
+      ensure
+        # Any exit that did not read a full response leaves unread bytes on
+        # the socket. Close it so no later request reads them.
+        discard_socket unless clean
       end
 
-      # Collapse a Partial (streamed) response into one Response.
-      def read_response(deadline = nil)
+      def discard_socket
+        @socket.close if @socket && !@socket.closed?
+      rescue IOError
+        nil
+      end
+
+      # Collapse a Partial (streamed) response into one Response. Frames for
+      # another seq are stale leftovers of an earlier request: skip them, as
+      # the reference client does. An error terminal frame wins over any
+      # partial rows already received.
+      def read_response(seq, deadline = nil)
         acc = nil
         loop do
           resp = Protocol.decode_response(Frame.read_frame(@socket, deadline: deadline))
+          next unless resp.seq == seq
+          return resp if resp.error?
+
           if resp.partial?
             acc ? acc.rows.concat(resp.rows) : (acc = resp)
             next
