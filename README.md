@@ -287,6 +287,9 @@ history and retests live in its [issue tracker][ar-bugs].
 - **`:native` transport** — result shapes are at pgwire parity, but
   `:pg` remains the primary transport; the plan is still to adopt the
   official NodeDB SDK after an official release.
+  The native protocol has no TLS: `connect` raises `NodeDB::ConnectionError`
+  when `sslmode` is `require`, `verify-ca` or `verify-full`, or an `ssl*`
+  file option is set. Use `:pg` for encrypted connections.
 - **No prepared statement support** — NodeDB sends `DataRow` without
   `RowDescription` for prepared statements; use simple-query mode.
 
