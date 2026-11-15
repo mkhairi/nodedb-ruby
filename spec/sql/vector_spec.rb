@@ -9,10 +9,36 @@ RSpec.describe NodeDB::SQL::Vector do
       expect(sql).to eq("SEARCH t USING VECTOR(c, ARRAY[1.0, 2.0], 5)")
     end
 
-    it "floats integer embedding values" do
-      sql = described_class.search(table: "t", column: "c", embedding: [1, 2], limit: 5)
+    it "accepts numeric strings" do
+      sql = described_class.search(table: "t", column: "c", embedding: ["0.5", 1], limit: 5)
 
-      expect(sql).to include("ARRAY[1.0, 2.0]")
+      expect(sql).to include("ARRAY[0.5, 1.0]")
+    end
+
+    it "rejects nil values" do
+      expect {
+        described_class.search(table: "t", column: "c", embedding: [0.1, nil], limit: 5)
+      }.to raise_error(ArgumentError, /embedding/)
+    end
+
+    it "rejects non-numeric strings" do
+      expect {
+        described_class.search(table: "t", column: "c", embedding: ["abc"], limit: 5)
+      }.to raise_error(ArgumentError, /embedding/)
+    end
+
+    it "rejects NaN and Infinity" do
+      [Float::NAN, Float::INFINITY].each do |bad|
+        expect {
+          described_class.search(table: "t", column: "c", embedding: [bad], limit: 5)
+        }.to raise_error(ArgumentError, /embedding/)
+      end
+    end
+
+    it "rejects an empty embedding" do
+      expect {
+        described_class.search(table: "t", column: "c", embedding: [], limit: 5)
+      }.to raise_error(ArgumentError, /embedding/)
     end
 
     it "coerces limit with #to_i" do
