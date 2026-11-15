@@ -82,3 +82,34 @@ RSpec.describe NodeDB::Native::Connection, "request cycle (no daemon)" do
     expect(conn.closed?).to be(true)
   end
 end
+
+RSpec.describe NodeDB::Native::Connection, "options and inspect (no daemon)" do
+  it "refuses an sslmode that demands TLS before opening a socket" do
+    expect(described_class).not_to receive(:new)
+
+    expect {
+      described_class.connect(database: "d", username: "u", sslmode: "verify-full")
+    }.to raise_error(NodeDB::ConnectionError, /does not support TLS.*sslmode=verify-full/)
+  end
+
+  it "refuses an ssl file option" do
+    expect {
+      described_class.connect(database: "d", username: "u", sslrootcert: "/etc/ca.pem")
+    }.to raise_error(NodeDB::ConnectionError, /does not support TLS/)
+  end
+
+  it "allows sslmode=prefer" do
+    allow(described_class).to receive(:new).and_return(:conn)
+
+    expect(described_class.connect(database: "d", username: "u", sslmode: "prefer")).to eq(:conn)
+  end
+
+  it "keeps the password out of #inspect" do
+    conn = described_class.allocate
+    conn.instance_variable_set(:@connection_parameters,
+      {host: "h", port: 6433, database: "d", username: "u", password: "pw-placeholder-123"})
+
+    expect(conn.inspect).to include("host=h", "username=u")
+    expect(conn.inspect).not_to include("pw-placeholder-123")
+  end
+end

@@ -10,14 +10,30 @@ module NodeDB
     #   conn.run("SELECT 1").to_a
     class Connection
       DEFAULT_PORT = 6433
+      SSL_DEMANDING_MODES = %w[require verify-ca verify-full].freeze
+      SSL_FILE_OPTIONS = %i[sslcert sslkey sslrootcert].freeze
 
       attr_reader :server_version, :capabilities, :limits, :connection_parameters
 
       def self.connect(database:, username:, host: "localhost", port: DEFAULT_PORT,
-        password: nil, connect_timeout: nil, read_timeout: nil, **_ignored)
+        password: nil, connect_timeout: nil, read_timeout: nil, **opts)
+        refuse_tls!(opts)
         new(host: host, port: port, database: database, username: username,
           password: password, connect_timeout: connect_timeout, read_timeout: read_timeout)
       end
+
+      # The native protocol has no TLS. Refuse options that demand it rather
+      # than send the password in cleartext. Other unknown options stay ignored.
+      def self.refuse_tls!(opts)
+        mode = opts[:sslmode].to_s
+        return unless SSL_DEMANDING_MODES.include?(mode) || SSL_FILE_OPTIONS.any? { |k| opts[k] }
+
+        raise NodeDB::ConnectionError,
+          "native transport does not support TLS: connection refused because " \
+          "sslmode=#{mode.empty? ? "(unset)" : mode} or an ssl file option demands it. " \
+          "Use protocol: :pg for TLS, or remove the ssl* options."
+      end
+      private_class_method :refuse_tls!
 
       def initialize(host:, port:, database:, username:, password:, connect_timeout: nil, read_timeout: nil)
         @connection_parameters = {
@@ -102,6 +118,13 @@ module NodeDB
 
       def closed?
         @socket.closed?
+      end
+
+      # Ruby's default #inspect prints every ivar, including the password.
+      def inspect
+        params = @connection_parameters || {}
+        "#<#{self.class.name} host=#{params[:host]} port=#{params[:port]} " \
+          "database=#{params[:database]} username=#{params[:username]}>"
       end
 
       private
