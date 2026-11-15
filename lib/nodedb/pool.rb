@@ -11,8 +11,9 @@ module NodeDB
   #
   # Connections are created lazily on first checkout via
   # NodeDB::Connection.connect, so `protocol: :native` and every other
-  # connect option pass straight through. A connection that dies stays
-  # in the pool — call #reload to discard and reconnect all of them.
+  # connect option pass straight through. A PG connection that dies stays
+  # in the pool. A native connection that closed itself is dropped at
+  # checkin. Call #reload to discard and reconnect all of them.
   class Pool
     def initialize(size: 5, timeout: 5, **connect_opts)
       @pool = ConnectionPool.new(size: size, timeout: timeout) do
@@ -20,8 +21,15 @@ module NodeDB
       end
     end
 
-    def with(&block)
-      @pool.with(&block)
+    # A native connection closes itself after a failed request. Drop it from
+    # the pool so the next checkout reconnects. PG connections keep the
+    # documented #reload behaviour.
+    def with
+      @pool.with do |conn|
+        yield conn
+      ensure
+        @pool.discard_current_connection(&:close) if conn.respond_to?(:closed?) && conn.closed?
+      end
     end
 
     def exec(sql)

@@ -46,6 +46,18 @@ RSpec.describe NodeDB::Pool do
       pool.with { |c| expect(c).to equal(second_conn) }
     end
 
+    it "discards a native connection that closed itself" do
+      first_conn = instance_double(NodeDB::Native::Connection, closed?: true, close: nil)
+      second_conn = instance_double(NodeDB::Native::Connection, closed?: false, close: nil)
+      allow(NodeDB::Connection).to receive(:connect).and_return(first_conn, second_conn)
+      pool = described_class.new(size: 1, timeout: 1, dbname: "x", user: "x")
+
+      pool.with { |c| c }
+
+      pool.with { |c| expect(c).to equal(second_conn) }
+      expect(first_conn).to have_received(:close)
+    end
+
     it "#shutdown closes connections" do
       allow(NodeDB::Connection).to receive(:connect).and_return(fake_conn)
       pool = described_class.new(size: 1, timeout: 1, dbname: "x", user: "x")
